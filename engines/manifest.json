@@ -1,0 +1,11 @@
+{
+  "engines": [
+    {
+      "id": "academy",
+      "name": "Akademie (Hogwarts)",
+      "file": "hogwarts.html",
+      "contentTopicId": "relclauses",
+      "addedVersion": "1.3.0"
+    }
+  ]
+}

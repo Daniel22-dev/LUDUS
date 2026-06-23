@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Hogwarts Grammar Academy ⚡</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 /* ═══ RESET ═══ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -439,6 +438,22 @@ button:focus-visible,.opt-btn:focus-visible,.mc2-btn:focus-visible,.stn-go:focus
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important;}
 }
+
+
+/* ═══ LUDUS ENGINE CONTRACT UI ═══ */
+.ludus-owner-footer{position:fixed;left:50%;bottom:5px;transform:translateX(-50%);z-index:450;max-width:calc(100vw - 18px);padding:4px 9px;border-radius:999px;background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.12);color:rgba(232,220,200,.52);font-family:'Cinzel',Georgia,serif;font-size:8.5px;letter-spacing:.45px;text-align:center;line-height:1.35;pointer-events:none;backdrop-filter:blur(4px)}
+.ludus-owner-footer span{white-space:nowrap}
+.ludus-modal{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.72);backdrop-filter:blur(5px)}
+.ludus-modal[hidden]{display:none}
+.ludus-modal-card{width:min(360px,100%);border-radius:16px;background:var(--h-card);border:1px solid var(--h-border);box-shadow:0 18px 50px rgba(0,0,0,.72),0 0 30px color-mix(in srgb,var(--h-pri) 25%,transparent);padding:18px;text-align:center;color:var(--h-text)}
+.ludus-modal-title{font-family:'Cinzel Decorative',Georgia,serif;font-size:18px;color:var(--h-acc-l);margin-bottom:7px;text-shadow:0 0 16px color-mix(in srgb,var(--h-acc) 45%,transparent)}
+.ludus-modal-body{font-size:15px;line-height:1.55;color:color-mix(in srgb,var(--h-text) 76%,transparent);margin-bottom:15px}
+.ludus-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.ludus-modal-btn{padding:11px;border-radius:9px;font-family:'Cinzel',Georgia,serif;font-size:12px;cursor:pointer;border:1px solid color-mix(in srgb,var(--h-acc) 35%,transparent)}
+.ludus-modal-cancel{background:rgba(0,0,0,.38);color:var(--h-dim)}
+.ludus-modal-confirm{background:linear-gradient(135deg,var(--h-pri),color-mix(in srgb,var(--h-pri) 55%,#000));color:var(--h-text);box-shadow:0 0 16px color-mix(in srgb,var(--h-pri) 35%,transparent)}
+@media (max-width:420px){.ludus-owner-footer{font-size:7.5px;bottom:3px}.ludus-owner-footer span{white-space:normal}}
+
 </style>
 </head>
 <body>
@@ -494,6 +509,23 @@ button:focus-visible,.opt-btn:focus-visible,.mc2-btn:focus-visible,.stn-go:focus
     .cine-bolt,#cine-go{animation:none}
   }
 </style>
+
+<!-- LUDUS owner footer + custom confirmation modal -->
+<div class="ludus-owner-footer" aria-label="Vlastnické označení aplikace">
+  <span>Vlastník aplikace: Daniel Baláž · Gymnázium, Ostrava-Hrabůvka</span>
+  <span> · © 2026 Daniel Baláž. Všechna práva vyhrazena.</span>
+</div>
+<div class="ludus-modal" id="reset-modal" hidden role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+  <div class="ludus-modal-card">
+    <h2 class="ludus-modal-title" id="reset-modal-title">Reset progress?</h2>
+    <p class="ludus-modal-body" id="reset-modal-body">This will erase all saved progress on this device.</p>
+    <div class="ludus-modal-actions">
+      <button type="button" class="ludus-modal-btn ludus-modal-cancel" id="reset-modal-cancel" onclick="closeResetModal()">Cancel</button>
+      <button type="button" class="ludus-modal-btn ludus-modal-confirm" id="reset-modal-confirm" onclick="confirmResetModal()">Reset</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function cineStart(){
     var v=document.getElementById('cine-vid');
@@ -814,8 +846,71 @@ button:focus-visible,.opt-btn:focus-visible,.mc2-btn:focus-visible,.stn-go:focus
    Dílna LVDVS generuje přesně tenhle objekt. Výchozí balíček =
    Hogwarts × vztažné věty. Vlož vlastní přes window.GAME_CONTENT.
    ══════════════════════════════════════════════════════════════ */
+/* ══════ LUDUS ENGINE CONTRACT — required by the LUDUS workshop manual ══════ */
+const LUDUS_ENGINE_VERSION='2.1.0-ludus-ready';
+const LUDUS_CONTENT_SCHEMA=2;
+const LUDUS_ENGINE_CHANGELOG=[
+  {date:'2026-06-23',version:'2.1.0-ludus-ready',changes:[
+    'Added LUDUS_GAME_MANIFEST and explicit engine capabilities.',
+    'Added EXERCISE_SUPPORT for all exercise renderers used by this engine.',
+    'Added LUDUS_CONTENT v2 adapter + validator with safe fallback.',
+    'Added official/safe theme variant contract.',
+    'Added self-test, owner footer, changelog, and custom reset modal.',
+    'Removed native browser confirmation usage and external runtime/API dependency.'
+  ]}
+];
+const EXERCISE_SUPPORT={
+  classify:{render:true,evaluate:true,requires:['t','a'],optionSource:'question.opts || exercise.opts',answerType:'number'},
+  yesno:{render:true,evaluate:true,requires:['t','a'],optionSource:'question.opts || exercise.opts',answerType:'number'},
+  correct:{render:true,evaluate:true,requires:['t','a'],optionSource:'question.opts || exercise.opts',answerType:'number'},
+  mc2:{render:true,evaluate:true,requires:['opts','a'],optionSource:'question.opts || exercise.opts',answerType:'number'},
+  mc4:{render:true,evaluate:true,requires:['opts','a'],optionSource:'question.opts',answerType:'number'},
+  wordbank:{render:true,evaluate:true,requires:['t','bank','a'],answerType:'string'},
+  spot:{render:true,evaluate:true,requires:['segments','a'],answerType:'number'},
+  builder:{render:true,evaluate:true,requires:['tokens','correct'],answerType:'ordered tokens'},
+  mixed:{render:true,evaluate:true,requires:['sub'],note:'Mixed station; each question declares its renderer via question.sub.'}
+};
+const LUDUS_GAME_MANIFEST={
+  schema:1,
+  gameId:'arcanum',
+  gameIdAliases:['hogwarts','hogwarts-grammar-academy'],
+  mechanicId:'academy',
+  engineId:'hogwarts-grammar-academy',
+  engineVersion:LUDUS_ENGINE_VERSION,
+  displayName:'Hogwarts Grammar Academy',
+  safeDisplayName:'Arcane Grammar Academy',
+  contentSchema:LUDUS_CONTENT_SCHEMA,
+  supportedContentSchemas:[1,2],
+  supportedExerciseTypes:Object.keys(EXERCISE_SUPPORT),
+  languages:{ui:['cs','en'],content:['cs','en']},
+  brandModes:['official','safe'],
+  defaultBrandMode:'official',
+  flowModel:'linear-academy-map-with-final-boss-and-certificate',
+  capabilities:{
+    standaloneHtml:true,
+    offlinePlayable:true,
+    requiresApi:false,
+    requiresNetwork:false,
+    savesProgress:true,
+    teacherMode:true,
+    reviewWrongAnswers:true,
+    finalBoss:true,
+    certificate:true,
+    customResetModal:true,
+    reducedMotionAware:true
+  },
+  exports:{
+    adapter:'adaptLudusContentToGame',
+    validator:'validateLudusContentForGame',
+    selfTest:'selfTestGame',
+    legacyContentGlobal:'GAME_CONTENT',
+    ludusContentGlobal:'LUDUS_CONTENT'
+  },
+  owner:{name:'Daniel Baláž',organization:'Gymnázium, Ostrava-Hrabůvka',copyright:'© 2026 Daniel Baláž. Všechna práva vyhrazena.'}
+};
+
 const DEFAULT_META={
-  schemaVersion:'1.0', frameId:'academy', skinId:'hogwarts', skinSafe:false,
+  schemaVersion:'1.0', gameId:'arcanum', mechanicId:'academy', frameId:'academy', skinId:'hogwarts', skinSafe:false,
   topic:'Relative Clauses', teacher:'Daniel Baláž', saveKey:'hga_v2',
   docTitle:'Hogwarts Grammar Academy ⚡',
   introTitle:'Hogwarts<br>Grammar Academy',
@@ -944,12 +1039,205 @@ const DEFAULT_STATIONS=[
 }
 ];
 
-/* ══════ PACK ASSEMBLY — injektovaný balíček vyhrává, jinak výchozí ══════ */
-const GAME_CONTENT=(window.GAME_CONTENT&&Array.isArray(window.GAME_CONTENT.stations))
-  ? window.GAME_CONTENT
-  : {meta:DEFAULT_META,houses:DEFAULT_HOUSES,stations:DEFAULT_STATIONS};
+/* ══════ PACK ASSEMBLY — injected LUDUS v2 wins, legacy v1 stays supported ══════ */
+function _clone(obj){return JSON.parse(JSON.stringify(obj));}
+function _asArray(v){return Array.isArray(v)?v:[];}
+function _nonEmptyString(v){return typeof v==='string'&&v.trim().length>0;}
+function _contentIdentity(content){
+  const m=(content&&content.meta)||{};
+  return {
+    gameId:m.gameId||content.gameId||m.skinId||'',
+    mechanicId:m.mechanicId||m.frame||m.frameId||content.mechanicId||''
+  };
+}
+function _exerciseType(ex,q){return (q&&q.sub)||((ex&&ex.type)||'');}
+function _questionOptions(ex,q){return (q&&Array.isArray(q.opts))?q.opts:((ex&&Array.isArray(ex.opts))?ex.opts:null);}
+function _validateQuestion(type,ex,q,path,errors,warnings){
+  if(!q||typeof q!=='object'){errors.push(path+' must be an object.');return;}
+  const support=EXERCISE_SUPPORT[type];
+  if(!support){errors.push(path+' uses unsupported exercise type "'+type+'".');return;}
+  if(type==='mixed'){
+    if(!q.sub)errors.push(path+' in a mixed station must declare sub.');
+    return;
+  }
+  if(['classify','yesno','correct','mc2'].includes(type)){
+    const opts=_questionOptions(ex,q);
+    if(!opts||opts.length<2)errors.push(path+' needs at least 2 options.');
+    if(typeof q.a!=='number')errors.push(path+'.a must be a numeric answer index.');
+    if(type!=='mc2'&&!_nonEmptyString(q.t))errors.push(path+'.t must contain the question text.');
+  }
+  if(type==='mc4'){
+    if(!Array.isArray(q.opts)||q.opts.length<4)errors.push(path+'.opts must contain at least 4 options.');
+    if(typeof q.a!=='number')errors.push(path+'.a must be a numeric answer index.');
+  }
+  if(type==='wordbank'){
+    if(!_nonEmptyString(q.t)||q.t.indexOf('___')<0)errors.push(path+'.t must include a ___ blank.');
+    if(!Array.isArray(q.bank)||q.bank.length<2)errors.push(path+'.bank must contain at least 2 words.');
+    if(!_nonEmptyString(q.a))errors.push(path+'.a must be the correct word.');
+  }
+  if(type==='spot'){
+    if(!Array.isArray(q.segments)||q.segments.length<2)errors.push(path+'.segments must contain at least 2 segments.');
+    if(typeof q.a!=='number')errors.push(path+'.a must be a numeric segment index.');
+    if(!_nonEmptyString(q.correction))warnings.push(path+'.correction is recommended for feedback.');
+  }
+  if(type==='builder'){
+    if(!Array.isArray(q.tokens)||q.tokens.length<2)errors.push(path+'.tokens must contain sentence tokens.');
+    if(!Array.isArray(q.correct)||q.correct.length<2)errors.push(path+'.correct must contain the target order.');
+  }
+  if(!_nonEmptyString(q.exp))warnings.push(path+'.exp is recommended for learner feedback.');
+}
+function validateLudusContentForGame(content){
+  const errors=[],warnings=[];
+  if(!content||typeof content!=='object'){
+    return {valid:false,errors:['Content must be an object.'],warnings:warnings};
+  }
+  const schema=content.schema||content.schemaVersion||((content.meta&&content.meta.schemaVersion)||null);
+  if(schema&&Number(String(schema).split('.')[0])>LUDUS_CONTENT_SCHEMA)warnings.push('Content schema is newer than this engine. Attempting best-effort load.');
+  const id=_contentIdentity(content);
+  const allowedGameIds=[LUDUS_GAME_MANIFEST.gameId].concat(LUDUS_GAME_MANIFEST.gameIdAliases||[]);
+  if(id.gameId&&allowedGameIds.indexOf(id.gameId)<0)warnings.push('Content gameId "'+id.gameId+'" does not match this engine aliases.');
+  if(id.mechanicId&&id.mechanicId!==LUDUS_GAME_MANIFEST.mechanicId)errors.push('Unsupported mechanicId "'+id.mechanicId+'". Expected "'+LUDUS_GAME_MANIFEST.mechanicId+'".');
+  const stations=_asArray(content.stations);
+  if(stations.length<1)errors.push('Content must include at least one station.');
+  stations.forEach(function(station,si){
+    const path='stations['+si+']';
+    if(!station||typeof station!=='object'){errors.push(path+' must be an object.');return;}
+    const ex=station.exercise||station.ex;
+    if(!ex||typeof ex!=='object'){errors.push(path+' must include exercise/ex.');return;}
+    const qs=_asArray(ex.qs);
+    if(!_nonEmptyString(ex.type))warnings.push(path+'.exercise.type is recommended.');
+    if(qs.length<1){errors.push(path+'.exercise.qs must contain at least one question.');return;}
+    qs.forEach(function(q,qi){
+      const type=_exerciseType(ex,q);
+      _validateQuestion(type,ex,q,path+'.exercise.qs['+qi+']',errors,warnings);
+    });
+  });
+  return {valid:errors.length===0,errors:errors,warnings:warnings};
+}
+function adaptLudusContentToGame(lc){
+  const report=validateLudusContentForGame(lc);
+  if(!report.valid){
+    console.warn('[LUDUS] Content rejected by Hogwarts engine validator:',report.errors,report.warnings);
+    return null;
+  }
+  if(report.warnings.length)console.info('[LUDUS] Content loaded with warnings:',report.warnings);
+  const m=lc.meta||{},lang=lc.lang||m.lang||null,theme=lc.theme||m.theme||null;
+  const stations=_asArray(lc.stations).map(function(s,idx){
+    const o={};
+    for(const k in s){o[k==='exercise'?'ex':k]=s[k];}
+    if(!('ex' in o))o.ex=(s.exercise!==undefined?s.exercise:null);
+    if(o.id==null)o.id=idx;
+    return o;
+  });
+  const teams=lc.teams;
+  const legacyHouses=(window.GAME_CONTENT&&window.GAME_CONTENT.houses)||null;
+  const houses=(teams&&typeof teams==='object'&&!Array.isArray(teams))?teams:legacyHouses;
+  const meta={
+    schemaVersion:'2.0',
+    gameId:m.gameId||LUDUS_GAME_MANIFEST.gameId,
+    mechanicId:m.mechanicId||m.frame||m.frameId||LUDUS_GAME_MANIFEST.mechanicId,
+    frameId:m.frame||m.frameId||LUDUS_GAME_MANIFEST.mechanicId,
+    skinId:m.skinId||'hogwarts',
+    skinSafe:!!m.skinSafe,
+    topic:m.topic||m.subject||'Grammar Practice',
+    teacher:m.teacher||DEFAULT_META.teacher,
+    saveKey:m.saveKey||DEFAULT_META.saveKey,
+    docTitle:m.docTitle||m.world||DEFAULT_META.docTitle,
+    introTitle:m.introTitle||m.docTitle||m.world||DEFAULT_META.introTitle,
+    introSub:m.introSub||m.topic||m.subject||DEFAULT_META.introSub,
+    certSchool:m.certSchool||m.world||DEFAULT_META.certSchool,
+    certSubject:m.certSubject||m.subject||m.topic||DEFAULT_META.certSubject,
+    lang:lang,
+    theme:theme
+  };
+  const pack={meta:meta,houses:houses||DEFAULT_HOUSES,stations:stations};
+  pack._ludus={schema:LUDUS_CONTENT_SCHEMA,validation:report,manifest:LUDUS_GAME_MANIFEST};
+  return pack;
+}
+/* Backwards-compatible alias kept for earlier builder output. */
+function fromLudusV2(lc){return adaptLudusContentToGame(lc);}
+function resolvePack(){
+  const lc=window.LUDUS_CONTENT;
+  if(lc&&Number(lc.schema||0)===LUDUS_CONTENT_SCHEMA){
+    const adapted=adaptLudusContentToGame(lc);
+    if(adapted)return adapted;
+  }
+  if(window.GAME_CONTENT&&Array.isArray(window.GAME_CONTENT.stations)){
+    const legacy=_clone(window.GAME_CONTENT);
+    const report=validateLudusContentForGame(legacy);
+    legacy._ludus={schema:1,validation:report,manifest:LUDUS_GAME_MANIFEST,legacy:true};
+    if(!report.valid)console.warn('[LUDUS] Legacy GAME_CONTENT loaded but validator found problems:',report.errors,report.warnings);
+    return legacy;
+  }
+  const fallback={meta:DEFAULT_META,houses:DEFAULT_HOUSES,stations:DEFAULT_STATIONS};
+  fallback._ludus={schema:1,validation:validateLudusContentForGame(fallback),manifest:LUDUS_GAME_MANIFEST,fallback:true};
+  return fallback;
+}
+const GAME_CONTENT=resolvePack();
 if(!GAME_CONTENT.meta)GAME_CONTENT.meta=DEFAULT_META;
 if(!GAME_CONTENT.houses)GAME_CONTENT.houses=DEFAULT_HOUSES;
+/* THEME groundwork: accept theme.variant / skinSafe from v2 or window.GAME_THEME without breaking */
+const GAME_THEME=(function(){
+  const inj=(window.GAME_THEME&&typeof window.GAME_THEME==='object')?window.GAME_THEME:{};
+  const lt=(window.LUDUS_CONTENT&&window.LUDUS_CONTENT.theme)||{};
+  const meta=GAME_CONTENT.meta||{};
+  const variant=lt.variant||inj.variant||(meta.skinSafe===false?'official':'safe');
+  return Object.assign({},inj,{variant:variant,skinSafe:!!meta.skinSafe});
+})();
+const THEME_VARIANTS={
+  official:{
+    label:'official',brandName:'Hogwarts Grammar Academy',safeName:'Arcane Grammar Academy',
+    allowedBrandTerms:['Hogwarts','O.W.L.','house','castle'],
+    cssVars:{'--ludus-brand-badge':'official'}
+  },
+  safe:{
+    label:'safe',brandName:'Arcane Grammar Academy',safeName:'Arcane Grammar Academy',
+    forbiddenBrandTerms:['Hogwarts','Harry Potter','O.W.L.','Gryffindor','Slytherin','Ravenclaw','Hufflepuff','Voldemort','Dumbledore'],
+    cssVars:{'--ludus-brand-badge':'safe'}
+  }
+};
+function applyThemeVariant(){
+  const v=(GAME_THEME.variant in THEME_VARIANTS)?GAME_THEME.variant:'safe';
+  if(document.body){document.body.setAttribute('data-theme-variant',v);document.body.setAttribute('data-ludus-engine',LUDUS_GAME_MANIFEST.engineId);}
+  const cfg=THEME_VARIANTS[v]||{},vars=cfg.cssVars;
+  if(vars){for(const k in vars)document.documentElement.style.setProperty(k,vars[k]);}
+}
+/* ====== I18N — funkcni chrome enginu; obsah z packu se nepreklada ====== */
+const UI_STRINGS={
+cs:{btn_enter:'✦ &nbsp;Vstoupit do Bradavic&nbsp; ✦',btn_skip_intro:'Přeskočit ⏭',tip_music:'Přepnout hudbu',tip_fullscreen:'Celá obrazovka',teacher_mode:'📋 Režim učitele',name_label:'Představ se, kouzelníku:',name_ph:'Zadej své celé jméno…',btn_begin:'✦ &nbsp;Začni svou cestu&nbsp; ✦',save_note:'Tvůj postup hradem si pamatují portréty.',btn_new_game:'Začít znovu (smaže postup)',choose_house:'Vyber si svou kolej',house_sub:'Tvé barvy utvářejí tvou cestu',castle_hdr:'🏰 &nbsp;Bradavický hrad',btn_start_over:'↺ &nbsp;Začít znovu',btn_back_castle:'← Hrad',btn_skip_all:'Přeskočit vše →',boss_you:'Ty',btn_continue:'Pokračovat →',btn_complete:'Dokončit →',btn_draw_wand:'⚔ Vytas hůlku',btn_try_again:'↺ Zkusit znovu',btn_claim_cert:'⚡ Získej svůj certifikát',btn_return_castle:'Zpět na hrad →',rew_title:'Komnata dobyta!',rew_title_full:'⚡ Komnata dobyta! ⚡',rew_earned:'Získal jsi: ',btn_enter_station:'Vstoupit →',div_bonus:'— 🇨🇿 Bonusové kolo —',div_final:'— Finální zkouška —',coll_empty:'Dokonči každou komnatu a získej odměny.',coll_label:'Sebráno',q_no:'Otázka {n} z {t}',review_count:'🔁 Opakování {n} / {t}',review_round:'🔁 Opakovací kolo — kouzel k zopakování: {n}',rev_correct:'Správně: ',rev_correct_answer:'Správná odpověď: ',rev_correct_word:'Správné slovo: ',rev_correct_order:'Správné pořadí: ',rev_error_in:'Chyba v: ',rev_should_be:' → správně: ',ver_a:'Verze A',ver_b:'Verze B',cert_completed:'Dokončeno: ',cert_awarded:'Tento certifikát se uděluje',cert_grade_txt:'který dosáhl známky',cert_spell_lbl:'Tvé registrované podpisové kouzlo:',name_required:'Zadej prosím své jméno!',modal_reset_title:'Smazat postup?',modal_reset_body:'Tímto smažeš veškerý uložený postup v této hře na tomto zařízení.',modal_cancel:'Zrušit',modal_confirm:'Smazat'},
+en:{btn_enter:'✦ &nbsp;Enter Hogwarts&nbsp; ✦',btn_skip_intro:'Skip ⏭',tip_music:'Toggle music',tip_fullscreen:'Fullscreen',teacher_mode:'📋 Teacher Mode',name_label:'Identify yourself, wizard:',name_ph:'Enter your full name...',btn_begin:'✦ &nbsp;Begin Your Journey&nbsp; ✦',save_note:'Your progress through the castle is remembered by the portraits.',btn_new_game:'Start a new journey (clears progress)',choose_house:'Choose Your House',house_sub:'Your colours will shape your journey',castle_hdr:'🏰 &nbsp;Hogwarts Castle',btn_start_over:'↺ &nbsp;Start over',btn_back_castle:'← Castle',btn_skip_all:'Skip All →',boss_you:'You',btn_continue:'Continue →',btn_complete:'Complete →',btn_draw_wand:'⚔ Draw Your Wand',btn_try_again:'↺ Try Again',btn_claim_cert:'⚡ Claim Your Certificate',btn_return_castle:'Return to the Castle →',rew_title:'Chamber Conquered!',rew_title_full:'⚡ Chamber Conquered! ⚡',rew_earned:'You have earned: ',btn_enter_station:'Enter →',div_bonus:'— 🇨🇿 Bonus Round —',div_final:'— Final Trial —',coll_empty:'Complete each chamber to collect rewards.',coll_label:'Collected',q_no:'Question {n} of {t}',review_count:'🔁 Review {n} / {t}',review_round:'🔁 Review Round — spells to revisit: {n}',rev_correct:'Correct: ',rev_correct_answer:'Correct answer: ',rev_correct_word:'Correct word: ',rev_correct_order:'Correct order: ',rev_error_in:'Error in: ',rev_should_be:' → should be: ',ver_a:'Version A',ver_b:'Version B',cert_completed:'Completed: ',cert_awarded:'This certificate is awarded to',cert_grade_txt:'who has achieved the grade of',cert_spell_lbl:'Your Registered Signature Spell:',name_required:'Please enter your name!',modal_reset_title:'Reset progress?',modal_reset_body:'This will erase all saved progress for this game on this device.',modal_cancel:'Cancel',modal_confirm:'Reset'}
+};
+const UI_LANG=(function(){const meta=GAME_CONTENT.meta||{},lg=(meta.lang&&meta.lang.ui)||'';return (lg==='cs'||lg==='en')?lg:'cs';})();
+function t(k,v){var s=(UI_STRINGS[UI_LANG]&&UI_STRINGS[UI_LANG][k]);if(s==null)s=UI_STRINGS.cs[k];if(s==null)s=UI_STRINGS.en[k];if(s==null)s=k;if(v){for(var p in v)s=s.split('{'+p+'}').join(v[p]);}return s;}
+
+function selfTestGame(){
+  const tests=[];
+  function add(name,pass,detail){tests.push({name:name,pass:!!pass,detail:detail||''});}
+  add('manifest present',typeof LUDUS_GAME_MANIFEST==='object'&&LUDUS_GAME_MANIFEST.engineId==='hogwarts-grammar-academy');
+  add('adapter exported',typeof adaptLudusContentToGame==='function');
+  add('validator exported',typeof validateLudusContentForGame==='function');
+  add('exercise support declared',Array.isArray(LUDUS_GAME_MANIFEST.supportedExerciseTypes)&&LUDUS_GAME_MANIFEST.supportedExerciseTypes.length>=8);
+  const pack={meta:DEFAULT_META,houses:DEFAULT_HOUSES,stations:DEFAULT_STATIONS};
+  const report=validateLudusContentForGame(pack);
+  add('default pack validates',report.valid,report.errors.join(' | '));
+  add('custom reset modal present',!!document.getElementById('reset-modal'));
+  add('owner footer present',!!document.querySelector('.ludus-owner-footer'));
+  add('offline/no API dependency',!document.querySelector('script[src]')&&!document.querySelector('link[href^="http"]'));
+  const ok=tests.every(t=>t.pass);
+  const result={ok:ok,engineVersion:LUDUS_ENGINE_VERSION,tests:tests,manifest:LUDUS_GAME_MANIFEST,validation:report,changeLog:LUDUS_ENGINE_CHANGELOG};
+  if(!ok)console.warn('[LUDUS] Hogwarts engine self-test failed:',result);else console.info('[LUDUS] Hogwarts engine self-test passed:',result);
+  return result;
+}
+window.LUDUS_GAME_MANIFEST=LUDUS_GAME_MANIFEST;
+window.EXERCISE_SUPPORT=EXERCISE_SUPPORT;
+window.THEME_VARIANTS=THEME_VARIANTS;
+window.LUDUS_ENGINE_CHANGELOG=LUDUS_ENGINE_CHANGELOG;
+window.adaptLudusContentToGame=adaptLudusContentToGame;
+window.validateLudusContentForGame=validateLudusContentForGame;
+window.selfTestGame=selfTestGame;
+window.LUDUS_ENGINE={manifest:LUDUS_GAME_MANIFEST,exerciseSupport:EXERCISE_SUPPORT,themeVariants:THEME_VARIANTS,adapt:adaptLudusContentToGame,validate:validateLudusContentForGame,selfTest:selfTestGame,changeLog:LUDUS_ENGINE_CHANGELOG};
+const I18N_DOM=[['#cine-go','btn_enter'],['#cine-skip','btn_skip_intro'],['#mute-btn','tip_music','title'],['#fs-btn','tip_fullscreen','title'],['#t-banner','teacher_mode'],['label[for="name-in"]','name_label'],['#name-in','name_ph','placeholder'],['button[onclick="beginJourney()"]','btn_begin'],['.save-note','save_note'],['#ng-btn','btn_new_game'],['.house-title','choose_house'],['.house-sub','house_sub'],['.map-hdr-title','castle_hdr'],['.reset-tiny','btn_start_over'],['.back-btn','btn_back_castle'],['#skip-btn','btn_skip_all'],['#boss-pname','boss_you'],['.btn-next','btn_continue'],['button[onclick="startBossFight()"]','btn_draw_wand'],['#boss-end-btn','btn_try_again'],['#rew-title','rew_title'],['#rew-btn','btn_return_castle'],['.cert-awarded','cert_awarded'],['.cert-grade-txt','cert_grade_txt'],['.cert-spell-lbl','cert_spell_lbl'],['#reset-modal-title','modal_reset_title'],['#reset-modal-body','modal_reset_body'],['#reset-modal-cancel','modal_cancel'],['#reset-modal-confirm','modal_confirm']];
+function applyI18n(){for(var i=0;i<I18N_DOM.length;i++){var sel=I18N_DOM[i][0],key=I18N_DOM[i][1],attr=I18N_DOM[i][2];var el=document.querySelector(sel);if(!el)continue;if(attr)el.setAttribute(attr,t(key));else el.innerHTML=t(key);}}
 const HOUSES=GAME_CONTENT.houses;
 const STATIONS=GAME_CONTENT.stations;
 const TEACHER=(GAME_CONTENT.meta&&GAME_CONTENT.meta.teacher)||'';
@@ -964,6 +1252,8 @@ function applyMeta(){
   set('.cert-subject',m.certSubject,true);
 }
 applyMeta();
+applyThemeVariant();
+applyI18n();
 let G={name:'',teacher:false,house:'',done:Array(STATIONS.length).fill(false),finished:false,finDate:'',cur:null,qIdx:0,answered:false,wbFill:'',wrongQs:[],reviewMode:false,reviewQueue:[],reviewPos:0};
 function save(){localStorage.setItem(SAVE_KEY,JSON.stringify({name:G.name,house:G.house,done:G.done,finished:G.finished,finDate:G.finDate}));}
 function loadSave(){
@@ -1244,13 +1534,44 @@ function typeWriter(el,text,done){
 /* ══════ INTRO ══════ */
 function beginJourney(){
   const inp=document.getElementById('name-in');const n=inp.value.trim();
-  if(!n){inp.classList.add('shake');inp.style.borderColor='rgba(196,68,68,.7)';inp.placeholder='Please enter your name!';setTimeout(()=>{inp.classList.remove('shake');inp.style.borderColor='';inp.placeholder='Enter your full name...';},600);return;}
+  if(!n){inp.classList.add('shake');inp.style.borderColor='rgba(196,68,68,.7)';inp.placeholder=t('name_required');setTimeout(()=>{inp.classList.remove('shake');inp.style.borderColor='';inp.placeholder=t('name_ph');},600);return;}
   G.name=n;G.teacher=(n===TEACHER);
   if(G.teacher){document.getElementById('t-banner').style.display='block';document.getElementById('skip-btn').style.display='block';}
   show('house');
 }
-function newGame(){if(!confirm('This will erase all progress. Are you sure?'))return;localStorage.removeItem(SAVE_KEY);G={name:'',teacher:false,house:'',done:Array(STATIONS.length).fill(false),finished:false,finDate:'',cur:null,qIdx:0,answered:false,wbFill:'',wrongQs:[],reviewMode:false,reviewQueue:[],reviewPos:0};document.getElementById('name-in').value='';document.getElementById('ng-btn').style.display='none';show('intro',true);}
-function confirmReset(){if(confirm('Reset all progress?'))newGame();}
+let _resetRequested=false;
+function resetGameState(){
+  localStorage.removeItem(SAVE_KEY);
+  G={name:'',teacher:false,house:'',done:Array(STATIONS.length).fill(false),finished:false,finDate:'',cur:null,qIdx:0,answered:false,wbFill:'',wrongQs:[],reviewMode:false,reviewQueue:[],reviewPos:0};
+  document.body.removeAttribute('data-house');
+  const nameIn=document.getElementById('name-in');if(nameIn)nameIn.value='';
+  const ng=document.getElementById('ng-btn');if(ng)ng.style.display='none';
+  const tb=document.getElementById('t-banner');if(tb)tb.style.display='none';
+  const sk=document.getElementById('skip-btn');if(sk)sk.style.display='none';
+  show('intro',true);
+}
+function openResetModal(){
+  _resetRequested=true;
+  const modal=document.getElementById('reset-modal');
+  if(!modal){resetGameState();return;}
+  document.getElementById('reset-modal-title').textContent=t('modal_reset_title');
+  document.getElementById('reset-modal-body').textContent=t('modal_reset_body');
+  document.getElementById('reset-modal-cancel').textContent=t('modal_cancel');
+  document.getElementById('reset-modal-confirm').textContent=t('modal_confirm');
+  modal.hidden=false;
+  setTimeout(()=>document.getElementById('reset-modal-cancel')?.focus(),0);
+}
+function closeResetModal(){
+  _resetRequested=false;
+  const modal=document.getElementById('reset-modal');if(modal)modal.hidden=true;
+}
+function confirmResetModal(){
+  if(!_resetRequested)return;
+  closeResetModal();
+  resetGameState();
+}
+function newGame(){openResetModal();}
+function confirmReset(){openResetModal();}
 document.getElementById('name-in').addEventListener('keydown',e=>{if(e.key==='Enter')beginJourney();document.getElementById('name-in').style.borderColor='';});
 
 /* ══════ HOUSE SELECTION ══════ */
@@ -1610,7 +1931,7 @@ function renderMap(){
     // Czech Traps (bonus) is only revealed after Department of Mysteries is done
     if(i===6&&!G.done[5])return;
     // Divider above Czech Traps once it appears
-    if(i===6){const d3=document.createElement('div');d3.className='map-divider bonus';d3.textContent='— 🇨🇿 Bonus Round —';list.appendChild(d3);}
+    if(i===6){const d3=document.createElement('div');d3.className='map-divider bonus';d3.textContent=t('div_bonus');list.appendChild(d3);}
     const st=stationStatus(i);
     const isFinal=i===5&&st==='unlocked';
     const isBonus=i===6;
@@ -1621,16 +1942,16 @@ function renderMap(){
     bodyD.innerHTML=`<div class="stn-name">${stn.name}</div><div class="stn-topic">${stn.topic}</div>`;
     const statusD=document.createElement('div');statusD.className='stn-status';
     if(st==='completed')statusD.innerHTML='<span class="stn-badge">✅</span>';
-    else if(st==='unlocked')statusD.innerHTML=`<button class="stn-go" onclick="event.stopPropagation();openStation(${i})">Enter →</button>`;
+    else if(st==='unlocked')statusD.innerHTML=`<button class="stn-go" onclick="event.stopPropagation();openStation(${i})">${t('btn_enter_station')}</button>`;
     else statusD.innerHTML='<span class="stn-badge">🔒</span>';
     div.appendChild(iconD);div.appendChild(bodyD);div.appendChild(statusD);
     if(st!=='locked')div.addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')openStation(i);});
     list.appendChild(div);
-    if(i===4&&st!=='completed'){const d2=document.createElement('div');d2.className='map-divider';d2.textContent='— Final Trial —';list.appendChild(d2);}
+    if(i===4&&st!=='completed'){const d2=document.createElement('div');d2.className='map-divider';d2.textContent=t('div_final');list.appendChild(d2);}
   });
   const cb=document.getElementById('coll-bar');
   const coll=STATIONS.filter((_,i)=>G.done[i]&&STATIONS[i].reward);
-  cb.innerHTML=coll.length===0?'<div class="coll-empty">Complete each chamber to collect rewards.</div>':`<div class="coll-label">Collected</div><div class="coll-icons">${coll.map(s=>s.reward.icon).join('')}</div>`;
+  cb.innerHTML=coll.length===0?'<div class="coll-empty">'+t('coll_empty')+'</div>':`<div class="coll-label">${t('coll_label')}</div><div class="coll-icons">${coll.map(s=>s.reward.icon).join('')}</div>`;
 }
 
 /* ══════ EXERCISE ENGINE ══════ */
@@ -1683,7 +2004,7 @@ function updateProg(){
     const pct=G.reviewPos/total*100;
     fill.style.width=pct+'%';
     fill.classList.add('review-mode');
-    txt.textContent='🔁 Review '+(G.reviewPos+1)+' / '+total;
+    txt.textContent=t('review_count',{n:G.reviewPos+1,t:total});
   } else {
     const qs=STATIONS[G.cur].ex.qs;
     const pct=G.qIdx/qs.length*100;
@@ -1733,7 +2054,7 @@ function startReviewRound(){
   G.qIdx=G.reviewQueue[0];
   G.answered=false;
   const n=G.reviewQueue.length;
-  document.getElementById('ex-topic').textContent='🔁 Review Round — '+n+(n>1?' spells':' spell')+' to revisit';
+  document.getElementById('ex-topic').textContent=t('review_round',{n:n});
   const atmoEl=document.getElementById('ex-atmo');
   const atmoTxt=document.getElementById('ex-atmo-txt');
   atmoEl.style.display='block';atmoTxt.textContent='';
@@ -2030,7 +2351,7 @@ function bossDefeatCutscene(){
     const lines=`A blade of green light erupts from his wand. You have no time to think, no time to dodge. The darkness takes you.<br><br>"<em>Such a waste of talent...</em>"<br><br>But this is only a duel. Rise again. The grammar of magic must be mastered.`;
     setTimeout(()=>typeWriterHTML(txt,lines,14),300);
     const btn=document.getElementById('boss-end-btn');
-    btn.textContent='↺ Try Again';
+    btn.textContent=t('btn_try_again');
     btn.className='boss-cut-btn';
     btn.dataset.action='retry';
     show('boss-end');
@@ -2055,7 +2376,7 @@ function bossVictoryCutscene(){
     const lines=`Your scarlet bolt strikes true. The Dark Lord's wand spins free into the shadows. He recoils — defeated.<br><br>You have completed a <strong>${grade}</strong> duel: <strong>${G.boss.corrects} / ${G.boss.total}</strong> spells true, with <strong>${G.boss.playerHP} HP</strong> remaining.<br><br>The Department of Mysteries falls silent. You have mastered the Final Trial.`;
     setTimeout(()=>typeWriterHTML(txt,lines,12),300);
     const btn=document.getElementById('boss-end-btn');
-    btn.textContent='⚡ Claim Your Certificate';
+    btn.textContent=t('btn_claim_cert');
     btn.className='boss-cut-btn victory';
     btn.dataset.action='proceed';
     show('boss-end');
@@ -2543,7 +2864,7 @@ function renderQ(){
   else if(type==='wordbank')html=renderWordbank(q,inst);
   else if(type==='spot')html=renderSpot(q,inst);
   else if(type==='builder')html=renderBuilder(q,inst);
-  document.getElementById('ex-body').innerHTML=`<div class="q-card" id="qcard"><div class="q-no">Question ${G.qIdx+1} of ${stn.ex.qs.length}</div>${html}<div class="fb" id="fb"></div></div>`;
+  document.getElementById('ex-body').innerHTML=`<div class="q-card" id="qcard"><div class="q-no">${t('q_no',{n:G.qIdx+1,t:stn.ex.qs.length})}</div>${html}<div class="fb" id="fb"></div></div>`;
   if(type==='builder')sbRender(); // paint initial empty slots
   if(G.teacher)setTimeout(()=>teacherReveal(type,q,opts),120);
 }
@@ -2698,9 +3019,9 @@ function showFb(ok,exp){
   fb.innerHTML=(ok?'✅ &nbsp;':'❌ &nbsp;')+exp;
   document.getElementById('ex-footer').style.display='block';
   const btn=document.querySelector('#ex-footer button');
-  let label='Continue →';
+  let label=t('btn_continue');
   if(G.reviewMode){
-    if(G.reviewPos>=G.reviewQueue.length-1)label='Complete →';
+    if(G.reviewPos>=G.reviewQueue.length-1)label=t('btn_complete');
   } else {
     const lastMain=G.qIdx>=STATIONS[G.cur].ex.qs.length-1;
     if(lastMain){
@@ -2716,11 +3037,11 @@ function showFb(ok,exp){
 }
 function teacherReveal(type,q,opts){
   const qopts=q.opts||opts||[];let label='';
-  if(type==='mc4'||type==='classify'||type==='yesno'||type==='correct')label=`Correct answer: <strong>${qopts[q.a]}</strong>`;
-  else if(type==='mc2'){const o=q.opts||opts;label=`Correct: <strong>${q.a===0?'Version A':'Version B'}</strong> — ${(o[q.a]||'').substring(0,55)}...`;}
-  else if(type==='wordbank')label=`Correct word: <strong>${q.a}</strong>`;
-  else if(type==='spot')label=`Error in: <strong>"${q.segments[q.a]}"</strong> → should be: <em>${q.correction}</em>`;
-  else if(type==='builder')label=`Correct order: <strong>${q.correct.join(' ').replace(/\s+,/g,',')}</strong>`;
+  if(type==='mc4'||type==='classify'||type==='yesno'||type==='correct')label=`${t('rev_correct_answer')}<strong>${qopts[q.a]}</strong>`;
+  else if(type==='mc2'){const o=q.opts||opts;label=`${t('rev_correct')}<strong>${q.a===0?t('ver_a'):t('ver_b')}</strong> — ${(o[q.a]||'').substring(0,55)}...`;}
+  else if(type==='wordbank')label=`${t('rev_correct_word')}<strong>${q.a}</strong>`;
+  else if(type==='spot')label=`${t('rev_error_in')}<strong>"${q.segments[q.a]}"</strong>${t('rev_should_be')}<em>${q.correction}</em>`;
+  else if(type==='builder')label=`${t('rev_correct_order')}<strong>${q.correct.join(' ').replace(/\s+,/g,',')}</strong>`;
   document.querySelector('.t-answer-reveal')?.remove();
   const el=document.createElement('div');el.className='t-answer-reveal';el.innerHTML='📋 &nbsp;'+label;
   const card=document.getElementById('qcard');if(card){const inst=card.querySelector('.q-inst');if(inst)inst.insertAdjacentElement('beforebegin',el);}
@@ -2731,10 +3052,10 @@ function curQ(){return STATIONS[G.cur].ex.qs[G.qIdx];}
 function showReward(id){
   const stn=STATIONS[id];const rew=stn.reward;
   document.getElementById('rew-icon').innerHTML='<div class="rew-seal-ripple"></div>'+waxSealSvg(id);
-  document.getElementById('rew-title').textContent='⚡ Chamber Conquered! ⚡';
-  document.getElementById('rew-item').textContent='You have earned: '+rew.name;
+  document.getElementById('rew-title').textContent=t('rew_title_full');
+  document.getElementById('rew-item').textContent=t('rew_earned')+rew.name;
   document.getElementById('rew-desc').textContent=rew.desc;
-  const btn=document.getElementById('rew-btn');btn.textContent='Return to the Castle →';btn.onclick=goMap;
+  const btn=document.getElementById('rew-btn');btn.textContent=t('btn_return_castle');btn.onclick=goMap;
   show('reward');
   stationBurst(id);
   // Play wax-stamp thud sound
@@ -2890,7 +3211,7 @@ function stationBurst(id){
 }
 
 /* ══════ CERTIFICATE ══════ */
-function showCert(){document.getElementById('cert-name').textContent=G.name;document.getElementById('cert-date').textContent='Completed: '+(G.finDate||today());document.getElementById('cert-spell').textContent=generateSpell(G.name);const pEl=document.getElementById('cert-patronus');if(pEl)pEl.innerHTML=patronusSvg(G.house||'');const lEl=document.getElementById('cert-patronus-label');if(lEl)lEl.textContent=patronusName(G.house||'');show('cert');}
+function showCert(){document.getElementById('cert-name').textContent=G.name;document.getElementById('cert-date').textContent=t('cert_completed')+(G.finDate||today());document.getElementById('cert-spell').textContent=generateSpell(G.name);const pEl=document.getElementById('cert-patronus');if(pEl)pEl.innerHTML=patronusSvg(G.house||'');const lEl=document.getElementById('cert-patronus-label');if(lEl)lEl.textContent=patronusName(G.house||'');show('cert');}
 function generateSpell(name){const P=['Grammaticus','Relativus','Syntacticus','Clausula','Verbum','Coniungo'],S=['Revelio','Maxima','Perfectus','Illumino','Claritas','Maestro'];const n=name.trim();return P[n.charCodeAt(0)%P.length]+' '+S[n.length%S.length]+'!';}
 function today(){return new Date().toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'});}
 
@@ -4338,11 +4659,11 @@ function showReward(id){
   const stn=STATIONS[id];
   const rew=stn.reward;
   document.getElementById('rew-icon').innerHTML='<div class="rew-seal-ripple"></div>'+waxSealSvg(id);
-  document.getElementById('rew-title').textContent='⚡ Chamber Conquered! ⚡';
-  document.getElementById('rew-item').textContent='You have earned: '+rew.name;
+  document.getElementById('rew-title').textContent=t('rew_title_full');
+  document.getElementById('rew-item').textContent=t('rew_earned')+rew.name;
   document.getElementById('rew-desc').textContent=rew.desc;
   const btn=document.getElementById('rew-btn');
-  btn.textContent='Return to the Castle →';
+  btn.textContent=t('btn_return_castle');
   btn.onclick=goMap;
   show('reward');
   const ac=getAC();
@@ -4354,7 +4675,7 @@ function showReward(id){
 ══════════════════════════════════════════ */
 function showCert(){
   document.getElementById('cert-name').textContent=G.name;
-  document.getElementById('cert-date').textContent='Completed: '+(G.finDate||today());
+  document.getElementById('cert-date').textContent=t('cert_completed')+(G.finDate||today());
   document.getElementById('cert-spell').textContent=generateSpell(G.name);
   const pEl=document.getElementById('cert-patronus');
   if(pEl)pEl.innerHTML=patronusSvg(G.house||'');
@@ -4867,6 +5188,7 @@ function today(){
    INIT
 ══════════════════════════════════════════ */
 (function init(){
+  selfTestGame();
   if(loadSave()&&G.name){
     document.getElementById('name-in').value=G.name;
     document.getElementById('ng-btn').style.display='block';

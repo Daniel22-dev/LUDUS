@@ -5,14 +5,16 @@
       "name": "Akademie (Hogwarts)",
       "file": "hogwarts.html",
       "contentTopicId": "relclauses",
-      "addedVersion": "1.3.0"
+      "addedVersion": "1.3.0",
+      "status": "ready"
     },
     {
       "id": "starwars",
       "name": "Star Wars",
       "file": "star-wars.html",
       "contentTopicId": "template",
-      "addedVersion": "1.3.0"
+      "addedVersion": "1.3.0",
+      "status": "ready"
     }
   ]
 }

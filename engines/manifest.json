@@ -1,94 +1,84 @@
 {
-  "schemaVersion": "ludus-engines-manifest-v1",
-  "updatedAt": "2026-06-24",
-  "statusLabels": {
-    "ready": {
-      "cs": "Hotová",
-      "en": "Ready"
+    "schemaVersion": "ludus-engines-manifest-v1",
+    "updatedAt": "2026-06-25",
+    "statusLabels": {
+        "ready": {
+            "cs": "Hotov\u00e1",
+            "en": "Ready"
+        },
+        "draft": {
+            "cs": "Rozpracovan\u00e1",
+            "en": "In progress"
+        },
+        "wip": {
+            "cs": "Rozpracovan\u00e1",
+            "en": "In progress"
+        },
+        "in-progress": {
+            "cs": "Rozpracovan\u00e1",
+            "en": "In progress"
+        },
+        "planned": {
+            "cs": "Pl\u00e1novan\u00e1",
+            "en": "Planned"
+        }
     },
-    "draft": {
-      "cs": "Rozpracovaná",
-      "en": "In progress"
-    },
-    "wip": {
-      "cs": "Rozpracovaná",
-      "en": "In progress"
-    },
-    "in-progress": {
-      "cs": "Rozpracovaná",
-      "en": "In progress"
-    }
-  },
-  "engines": [
-    {
-      "id": "academy",
-      "name": "Akademie (Hogwarts)",
-      "file": "hogwarts.html",
-      "contentTopicId": "relclauses",
-      "addedVersion": "1.3.0",
-      "status": "ready",
-      "uiStatus": "hotová",
-      "statusLabel": {
-        "cs": "Hotová",
-        "en": "Ready"
-      }
-    },
-    {
-      "id": "starwars",
-      "name": "Star Wars",
-      "file": "star-wars.html",
-      "contentTopicId": "template",
-      "addedVersion": "1.3.0",
-      "status": "ready",
-      "uiStatus": "hotová",
-      "statusLabel": {
-        "cs": "Hotová",
-        "en": "Ready"
-      }
-    },
-    {
-      "id": "lotr",
-      "gameId": "lotr",
-      "mechanicId": "quest",
-      "name": "LOTR: A Grammar Quest",
-      "title": {
-        "cs": "LOTR: Gramatická výprava",
-        "en": "LOTR: A Grammar Quest"
-      },
-      "file": "lotr.html",
-      "url": "engines/lotr.html",
-      "contentTopicId": "template",
-      "flowModel": "mapStationsFinalChallenge",
-      "addedVersion": "1.0.0-ludus.1",
-      "status": "ready",
-      "uiStatus": "hotová",
-      "statusLabel": {
-        "cs": "Hotová",
-        "en": "Ready"
-      },
-      "supportedMechanics": [
-        "quest"
-      ],
-      "supportedExerciseTypes": [
-        "mcq",
-        "trueFalse",
-        "wordBank",
-        "ordering"
-      ],
-      "uiLanguages": [
-        "cs",
-        "en"
-      ],
-      "contentLanguages": [
-        "cs",
-        "en",
-        "es"
-      ],
-      "brandModes": [
-        "official",
-        "safe"
-      ],
-      "engineKind": "single-html"
-    }
-  ]
+    "engines": [
+        {
+            "id": "academy",
+            "name": "Akademie (Hogwarts)",
+            "file": "hogwarts.html",
+            "contentTopicId": "relclauses",
+            "addedVersion": "1.3.0",
+            "status": "ready"
+        },
+        {
+            "id": "starwars",
+            "name": "Star Wars",
+            "file": "star-wars.html",
+            "contentTopicId": "template",
+            "addedVersion": "1.3.0",
+            "status": "ready"
+        },
+        {
+            "id": "lotr",
+            "gameId": "lotr",
+            "mechanicId": "quest",
+            "name": "LOTR: A Grammar Quest",
+            "title": {
+                "cs": "LOTR: Gramatick\u00e1 v\u00fdprava",
+                "en": "LOTR: A Grammar Quest"
+            },
+            "file": "lotr.html",
+            "url": "engines/lotr.html",
+            "contentTopicId": "template",
+            "flowModel": "mapStationsFinalChallenge",
+            "addedVersion": "1.0.0-ludus.1",
+            "status": "draft",
+            "supportedMechanics": [
+                "quest"
+            ],
+            "supportedExerciseTypes": [
+                "mcq",
+                "trueFalse",
+                "wordBank",
+                "ordering"
+            ],
+            "uiLanguages": [
+                "cs",
+                "en"
+            ],
+            "contentLanguages": [
+                "cs",
+                "en",
+                "es"
+            ],
+            "brandModes": [
+                "official",
+                "safe"
+            ],
+            "engineKind": "single-html",
+            "note": "engine soubor je zat\u00edm pr\u00e1zdn\u00fd \u2013 \u010dek\u00e1 na build"
+        }
+    ]
 }

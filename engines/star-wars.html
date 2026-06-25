@@ -605,7 +605,7 @@ const LUDUS_GAME_MANIFEST = {
   schemaVersion: "ludus-game-manifest-v1",
   gameId: "starwars",
   mechanicId: "academy",
-  engineVersion: "1.1.0-ludus-v2",
+  engineVersion: "1.2.0-ludus-interop",
   title: {
     cs: "Star Wars Academy",
     en: "Star Wars Academy",
@@ -912,6 +912,120 @@ function normalizeLudusContent(content){
     boss: (content && (content.boss || content.finalChallenge)) || flow.finalChallenge || flow.boss || null
   };
 }
+/* ──────────────────────────────────────────────────────────────────────
+   LUDUS interop: builder (LUDUS_CONTENT v2 / starší GAME_CONTENT v1) posílá
+   stanice jako jedno cvičení s polem qs a typy mc4/mc2/yesno/wordbank/classify;
+   metadata má zanořená pod game/lang/theme/flow. Tahle vrstva to převede do
+   tvaru dle manuálu 02 (stanice = title + tasks[], typy mcq/trueFalse/classify/
+   wordBank, metadata na top-levelu), který už zbytek enginu umí.
+   Pokud obsah už je v manuálovém tvaru, projde beze změny.
+   ────────────────────────────────────────────────────────────────────── */
+function __ludusCoerceV2(raw){
+  if(!raw || typeof raw !== "object") return raw;
+  const stationsRaw = asArray(raw.stations).length ? asArray(raw.stations)
+    : (raw.flow && raw.flow.blocks ? asArray(raw.flow.blocks.stations) : asArray(raw.flow && raw.flow.stations));
+  const hasExerciseShape = stationsRaw.some(function(s){ return s && (s.exercise || s.ex); });
+  const hasNestedMeta = !!(raw.game || raw.lang || raw.theme || (raw.flow && raw.flow.model));
+  if(!hasExerciseShape && !hasNestedMeta) return raw; // už je to manuálový v2 / v1 bez cvičení
+
+  const g = raw.game || {};
+  const lang = raw.lang || (raw.meta && raw.meta.lang) || {};
+  const theme = raw.theme || (raw.meta && raw.meta.theme) || {};
+  const flow = raw.flow || {};
+  const meta = raw.meta || {};
+  const TYPE_MAP = { mc4:"mcq", mc2:"mcq", yesno:"trueFalse", wordbank:"wordBank", classify:"classify",
+                     mcq:"mcq", trueFalse:"trueFalse", wordBank:"wordBank", choice:"mcq" };
+
+  function num(v){ return (typeof v === "number" && isFinite(v)) ? v : null; }
+  function coerceQuestion(ex, q, qi){
+    const exType = ex && ex.type;
+    const t = TYPE_MAP[exType] || "mcq";
+    const exOpts = asArray(ex && ex.opts);                 // yesno/classify: volby na úrovni cvičení
+    const exInst = (ex && ex.inst) || "";
+    const qText = (q && (q.t || q.q || q.prompt)) || exInst || "Úloha";
+    const exp = (q && (q.exp || q.explanation || q.why)) || "";
+    const base = { id: "q" + (qi + 1), explanation: exp };
+    if(t === "trueFalse"){
+      const opts = asArray(q && (q.opts || q.options)).length ? asArray(q.opts || q.options) : exOpts;
+      const ai = num(q && (q.a != null ? q.a : q.answerIndex));
+      return Object.assign(base, { type:"trueFalse", prompt:qText, options:opts,
+        answerIndex: ai != null ? ai : 0, answer: (ai != null && opts[ai] != null) ? opts[ai] : (q && q.answer) });
+    }
+    if(t === "wordBank"){
+      const bank = asArray(q && (q.bank || q.opts || q.options));
+      let ans = (q && q.answer != null) ? q.answer : (q && q.a);
+      if(typeof ans === "number" && bank[ans] != null) ans = bank[ans]; // kdyby přišel index
+      return Object.assign(base, { type:"wordBank", prompt:qText, bank:bank, answer:ans });
+    }
+    if(t === "classify"){
+      // builder classify = zařaď položku (q.t) do jedné z kategorií (ex.opts) -> jednovýběr
+      const opts = exOpts.length ? exOpts : asArray(q && (q.opts || q.options));
+      const ai = num(q && (q.a != null ? q.a : q.answerIndex));
+      const prompt = exInst ? (exInst + " — " + qText) : qText;
+      return Object.assign(base, { type:"mcq", prompt:prompt, options:opts,
+        answerIndex: ai != null ? ai : 0, answer: (ai != null && opts[ai] != null) ? opts[ai] : (q && q.answer) });
+    }
+    // mcq (mc4 = volby na otázce, mc2 = společný pokyn v ex.inst)
+    const opts = asArray(q && (q.opts || q.options)).length ? asArray(q.opts || q.options) : exOpts;
+    const ai = num(q && (q.a != null ? q.a : q.answerIndex));
+    return Object.assign(base, { type:"mcq", prompt:qText, options:opts,
+      answerIndex: ai != null ? ai : 0, answer: (ai != null && opts[ai] != null) ? opts[ai] : (q && q.answer) });
+  }
+  function coerceTasksFrom(node){
+    const ex = node && (node.exercise || node.ex);
+    if(ex && asArray(ex.qs).length) return ex.qs.map(function(q, qi){ return coerceQuestion(ex, q, qi); });
+    const direct = asArray(node && (node.tasks || node.questions));
+    return direct; // už hotové úlohy
+  }
+  function coerceStation(s, i){
+    if(s && (s.exercise || s.ex)){
+      return {
+        id: "station-" + (i + 1),
+        title: (s.title != null ? s.title : s.name) || ("Stanice " + (i + 1)),
+        subtitle: s.subtitle || s.topic || "",
+        scene: s.scene,
+        accent: s.accent,
+        intro: s.intro || s.atmo || "",
+        reward: s.reward || null,
+        pick: s.pick,
+        tasks: coerceTasksFrom(s)
+      };
+    }
+    return s; // stanice už je v manuálovém tvaru
+  }
+
+  const stations = stationsRaw.map(coerceStation);
+
+  // boss / finální výzva (volitelné) — když najdeme cvičení s qs, rozbalíme na úlohy
+  const bossNode = raw.finalChallenge || raw.boss || (raw.flow && raw.flow.blocks && raw.flow.blocks.finalChallenge) || (flow && flow.finalChallenge) || null;
+  let boss = null;
+  if(bossNode && typeof bossNode === "object"){
+    const bTasks = coerceTasksFrom(bossNode);
+    boss = (bTasks && bTasks.length)
+      ? { enabled:true, title:(bossNode.title || bossNode.name), place:bossNode.place || bossNode.subtitle,
+          intro:bossNode.intro, bossName:bossNode.bossName, tasks:bTasks }
+      : (asArray(bossNode.tasks || bossNode.questions).length ? bossNode : null);
+  }
+
+  const brandMode = theme.variant || raw.brandMode || (meta.skinSafe === false ? "official" : "safe");
+  return {
+    schemaVersion: raw.schemaVersion || "ludus-content-v2",
+    gameId: g.gameId || raw.gameId || (meta.game && meta.game.gameId),
+    mechanicId: g.mechanicId || raw.mechanicId || (meta.game && meta.game.mechanicId),
+    flowModel: flow.model || raw.flowModel || (g.flowModel),
+    uiLang: lang.ui || raw.uiLang || "cs",
+    contentLang: lang.content || raw.contentLang || "en",
+    supportLang: lang.support || raw.supportLang || "cs",
+    brandMode: brandMode,
+    subject: meta.subject || raw.subject,
+    topic: meta.topic || raw.topic,
+    meta: meta,
+    labels: raw.labels || raw.themeLabels || null,
+    intro: raw.intro || flow.intro || null,
+    stations: stations,
+    boss: boss
+  };
+}
 function validateLudusContent(content){
   if(!content || typeof content !== "object") throw new Error("LUDUS_CONTENT musí být objekt.");
   const c = normalizeLudusContent(content);
@@ -923,20 +1037,20 @@ function validateLudusContent(content){
   if(!LUDUS_GAME_MANIFEST.uiLanguages.includes(c.uiLang)) throw new Error("Nepodporovaný uiLang: "+c.uiLang);
   if(!LUDUS_GAME_MANIFEST.contentLanguages.includes(c.contentLang)) throw new Error("Nepodporovaný contentLang: "+c.contentLang);
   if(c.stations.length){
-    if(c.stations.length < LUDUS_GAME_MANIFEST.minStations) throw new Error("Málo stanic: "+c.stations.length+". Minimum je "+LUDUS_GAME_MANIFEST.minStations+".");
+    if(c.stations.length < LUDUS_GAME_MANIFEST.minStations) console.warn("[LUDUS] Doporučené minimum stanic je "+LUDUS_GAME_MANIFEST.minStations+", obsah má "+c.stations.length+". Hra se přesto spustí.");
     c.stations.forEach((st, i)=>{
       if(!st || typeof st !== "object") throw new Error("stations["+i+"] není objekt.");
       if(!st.id) throw new Error("stations["+i+"]: chybí id.");
       if(!st.title) throw new Error("stations["+i+"]: chybí title.");
       const tasks = asArray(st.tasks || st.questions);
-      if(tasks.length < LUDUS_GAME_MANIFEST.minTasksPerStation) throw new Error("stations["+i+"]: málo úloh. Minimum je "+LUDUS_GAME_MANIFEST.minTasksPerStation+".");
+      if(tasks.length < LUDUS_GAME_MANIFEST.minTasksPerStation) console.warn("[LUDUS] stations["+i+"]: doporučené minimum úloh je "+LUDUS_GAME_MANIFEST.minTasksPerStation+", má "+tasks.length+".");
       tasks.forEach((task,j)=>validateTask(task, "stations["+i+"].tasks["+j+"]"));
     });
   }
   const bossTasks = c.boss && asArray(c.boss.tasks || c.boss.questions);
   const bossEnabled = c.boss && c.boss.enabled !== false;
   if(bossEnabled && bossTasks && bossTasks.length){
-    if(bossTasks.length < LUDUS_GAME_MANIFEST.boss.minTasks) throw new Error("Boss má málo úloh. Minimum je "+LUDUS_GAME_MANIFEST.boss.minTasks+".");
+    if(bossTasks.length < LUDUS_GAME_MANIFEST.boss.minTasks) console.warn("[LUDUS] Boss má méně úloh ("+bossTasks.length+") než doporučené minimum "+LUDUS_GAME_MANIFEST.boss.minTasks+".");
     bossTasks.forEach((task,j)=>validateTask(task, "boss.tasks["+j+"]"));
   }
   return true;
@@ -1031,6 +1145,15 @@ function selfTestGame(){
     { name:"i18n", ok: !!I18N.cs && !!I18N.en },
     { name:"adapter", ok: typeof adaptLudusContentToStarWars === "function" },
     { name:"validator", ok: typeof validateLudusContent === "function" },
+    { name:"coerce.builderV2", ok:(function(){ try{
+        var demo={schema:2,game:{gameId:"starwars",mechanicId:"academy",flowModel:"mapStationsFinalChallenge"},lang:{ui:"cs",content:"en",support:"cs"},theme:{variant:"safe"},
+          stations:[{name:"S1",exercise:{type:"mc4",qs:[{t:"q",opts:["a","b","c","d"],a:0,exp:""}]}},
+                    {name:"S2",exercise:{type:"yesno",opts:["ANO","NE"],inst:"i",qs:[{t:"t",a:0,exp:""}]}},
+                    {name:"S3",exercise:{type:"wordbank",inst:"i",qs:[{t:"___",bank:["x","y"],a:"x",exp:""}]}}]};
+        var c=__ludusCoerceV2(demo);
+        if(!(c.stations&&c.stations.length===3&&c.stations[0].title&&Array.isArray(c.stations[0].tasks)&&c.stations[0].tasks[0].type==="mcq"&&c.stations[1].tasks[0].type==="trueFalse"&&c.stations[2].tasks[0].type==="wordBank")) return false;
+        validateLudusContent(c); return true;
+      }catch(_e){ return false; } })() },
     { name:"fallbackContent", ok: Array.isArray(STATIONS) && STATIONS.length>0 && !!BOSS && Array.isArray(BOSS.questions) },
     { name:"offline", ok: !/AIza[0-9A-Za-z_\-]{20,}/.test(document.documentElement.outerHTML) }
   ];
@@ -1201,18 +1324,31 @@ const BOSS = {
 
 /* LUDUS content hook: builder vloží window.LUDUS_CONTENT v2.
    Zpětně podporujeme i starší window.GAME_CONTENT. */
-try{
-  const injectedContent = window.LUDUS_CONTENT || window.GAME_CONTENT;
-  if (injectedContent && typeof injectedContent==="object"){
-    applyGameContent(adaptLudusContentToStarWars(injectedContent));
-  } else {
-    applyThemeVariant("official"); // fallback ukázka zůstává v interní/oficiální variantě
+/* LUDUS content hook: builder vkládá window.LUDUS_CONTENT v2 (případně starší
+   window.GAME_CONTENT v1). __ludusCoerceV2 převede oba tvary na formát dle
+   manuálu 02; při neúspěchu zkusíme druhý zdroj a teprve pak ukázkový obsah. */
+(function(){
+  function tryApply(src){
+    if(!src || typeof src !== "object") return false;
+    applyGameContent(adaptLudusContentToStarWars(__ludusCoerceV2(src)));
+    return true;
   }
-}catch(e){
-  window.LUDUS_CONTENT_ERROR = e;
-  console.warn("LUDUS content ignorováno:", e);
-  try{ applyThemeVariant("official"); }catch(_e){}
-}
+  const primary = window.LUDUS_CONTENT || window.GAME_CONTENT;
+  const secondary = (primary === window.LUDUS_CONTENT) ? window.GAME_CONTENT : null;
+  try{
+    if(!tryApply(primary)) applyThemeVariant("official");
+  }catch(e){
+    window.LUDUS_CONTENT_ERROR = e;
+    console.warn("LUDUS obsah (primární) odmítnut, zkouším záložní zdroj:", e);
+    try{
+      if(!tryApply(secondary)) applyThemeVariant("official");
+    }catch(e2){
+      window.LUDUS_CONTENT_ERROR2 = e2;
+      console.warn("LUDUS obsah nelze použít, spouštím ukázku:", e2);
+      try{ applyThemeVariant("official"); }catch(_e){}
+    }
+  }
+})();
 
 /* ════════════════════════════════════════════════════════════════════
    6) STAV

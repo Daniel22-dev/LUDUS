@@ -7,6 +7,7 @@ const ENGINES_DIR = path.join(ROOT, "engines");
 const DIST        = path.join(ROOT, "dist");
 const DIST_ENG    = path.join(DIST, "engines");
 const PUBLIC_DIR  = path.join(ROOT, "public");
+const DOCS_DIR    = path.join(ROOT, "docs");
 
 // čistý dist
 fs.rmSync(DIST, { recursive: true, force: true });
@@ -28,7 +29,12 @@ if (fs.existsSync(PUBLIC_DIR)) {
   fs.cpSync(PUBLIC_DIR, DIST, { recursive: true });
 }
 
-// 2) enginy + manifest -> dist/engines/
+// 2b) dokumentace -> dist/docs/
+if (fs.existsSync(DOCS_DIR)) {
+  fs.cpSync(DOCS_DIR, path.join(DIST, "docs"), { recursive: true });
+}
+
+// 3) enginy + manifest -> dist/engines/
 let engineCount = 0;
 if (fs.existsSync(ENGINES_DIR)) {
   for (const f of fs.readdirSync(ENGINES_DIR)) {
@@ -39,7 +45,7 @@ if (fs.existsSync(ENGINES_DIR)) {
   }
 }
 
-// 3) přehled
+// 4) přehled
 const kb = p => (fs.statSync(p).size / 1024).toFixed(1) + " kB";
 console.log("✅  Build dokončen");
 console.log(`   dílna:  dist/index.html  →  ${kb(path.join(DIST, "index.html"))}`);

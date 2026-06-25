@@ -604,6 +604,7 @@ const LABELS = {
 const LUDUS_GAME_MANIFEST = {
   schemaVersion: "ludus-game-manifest-v1",
   gameId: "starwars",
+  engineId: "starwars-academy",
   gameIdAliases: ["knights", "star-knights"],
   mechanicId: "academy",
   engineVersion: "1.2.0-ludus-interop",
@@ -637,7 +638,9 @@ const LUDUS_GAME_MANIFEST = {
     hasLeaderboard: false,
     supportsTeams: false,
     offline: true,
-    singleHtml: true
+    singleHtml: true,
+    savesProgress: true,
+    saveLoadResumeApi: "ludus-progress-api-v1"
   },
   requiredContentBlocks: ["stations"],
   optionalContentBlocks: ["intro", "finalChallenge", "boss", "rewards"],
@@ -1157,6 +1160,7 @@ function selfTestGame(){
         validateLudusContent(c); return true;
       }catch(_e){ return false; } })() },
     { name:"fallbackContent", ok: Array.isArray(STATIONS) && STATIONS.length>0 && !!BOSS && Array.isArray(BOSS.questions) },
+    { name:"progressApi", ok: typeof window.LUDUS_PROGRESS === "object" || typeof saveProgress === "function" },
     { name:"offline", ok: !/AIza[0-9A-Za-z_\-]{20,}/.test(document.documentElement.outerHTML) }
   ];
   return { ok: tests.every(x=>x.ok), tests };
@@ -1169,7 +1173,13 @@ try{
     validateLudusContent,
     adaptLudusContentToStarWars,
     applyGameContent,
-    selfTestGame
+    selfTestGame,
+    progress: null,
+    saveProgress: null,
+    loadProgress: null,
+    resumeProgress: null,
+    clearProgress: null,
+    getProgressSummary: null
   };
   window.selfTestGame = selfTestGame;
 }catch(e){}
@@ -1375,17 +1385,18 @@ function normName(s){ return String(s||"").toLowerCase().normalize("NFD").replac
 
 /* ── ukládání postupu (localStorage; bez něj tiše degraduje – funguje na nasazené stránce) ── */
 const STORE_KEY="hvezdni_rytiri_save_v1";
+const LUDUS_PROGRESS_API_VERSION="ludus-progress-api-v1";
 function safeGet(k){ try{ return window.localStorage.getItem(k); }catch(e){ return null; } }
 function safeSet(k,v){ try{ window.localStorage.setItem(k,v); return true; }catch(e){ return false; } }
 function safeDel(k){ try{ window.localStorage.removeItem(k); }catch(e){} }
 function doneCount(d){ return d?Object.keys(d).filter(k=>d[k]).length:0; }
 function saveProgress(){
-  try{ safeSet(STORE_KEY, JSON.stringify({ v:1, name:S.name, diffName:S.diff&&S.diff.name,
+  try{ safeSet(STORE_KEY, JSON.stringify({ v:1, apiVersion:LUDUS_PROGRESS_API_VERSION, engineId:LUDUS_GAME_MANIFEST.engineId, gameId:LUDUS_GAME_MANIFEST.gameId, mechanicId:LUDUS_GAME_MANIFEST.mechanicId, name:S.name, diffName:S.diff&&S.diff.name,
     done:S.done, results:S.results, bossWon:S.bossWon, ts:Date.now() })); }catch(e){}
 }
 function loadProgress(){
   const raw=safeGet(STORE_KEY); if(!raw) return null;
-  try{ const d=JSON.parse(raw); if(d&&d.v===1 && (doneCount(d.done)>0 || d.bossWon)) return d; }catch(e){}
+  try{ const d=JSON.parse(raw); if(d&&d.v===1 && (d.name || doneCount(d.done)>0 || d.bossWon)) return d; }catch(e){}
   return null;
 }
 function resumeProgress(d){
@@ -1725,6 +1736,7 @@ function initStart(){
     S.total=0; S.correct=0; S.bossWon=false; S.bossHp=100; S.bsIdx=0;
     S.bossTotal=0; S.bossCorrect=0; S.streakWrong=0;
     S.id=makeId(); S.date=new Date().toLocaleString("cs-CZ");
+    saveProgress();
     startIntro();
   };
   $("#pname").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#startBtn").click(); });
@@ -1733,7 +1745,11 @@ function initStart(){
   $("#resumeBtn").onclick=()=>{ const d=loadProgress(); if(d) resumeProgress(d); };
   $("#forgetBtn").onclick=(e)=>{ e.preventDefault(); clearProgress(); refreshResume(); };
 }
-function clearProgress(){ safeDel(STORE_KEY); }
+function clearProgress(){ safeDel(STORE_KEY); return true; }
+function getProgressSummary(d){d=d||loadProgress();if(!d)return {apiVersion:LUDUS_PROGRESS_API_VERSION,engineId:LUDUS_GAME_MANIFEST.engineId,storeKey:STORE_KEY,exists:false};const total=STATIONS.length,c=doneCount(d.done);return {apiVersion:LUDUS_PROGRESS_API_VERSION,engineId:LUDUS_GAME_MANIFEST.engineId,gameId:LUDUS_GAME_MANIFEST.gameId,storeKey:STORE_KEY,exists:true,name:d.name||'',stage:d.bossWon?'finished':(c>0?'map':'intro'),done:c,total:total,finished:!!d.bossWon,updatedAt:d.ts||null};}
+function hasProgress(){return !!loadProgress();}
+function installLudusProgressApi(){const api={version:LUDUS_PROGRESS_API_VERSION,storage:'localStorage',key:STORE_KEY,saveProgress:saveProgress,loadProgress:loadProgress,resumeProgress:resumeProgress,clearProgress:clearProgress,getProgressSummary:getProgressSummary,hasProgress:hasProgress};window.LUDUS_PROGRESS=api;window.LUDUS_ENGINE_API=Object.assign({},window.LUDUS_ENGINE_API||{}, {progress:api,saveProgress:saveProgress,loadProgress:loadProgress,resumeProgress:resumeProgress,clearProgress:clearProgress,getProgressSummary:getProgressSummary});}
+installLudusProgressApi();
 function refreshResume(){
   const d=loadProgress();
   const btn=$("#resumeBtn"), note=$("#resumeNote");

@@ -4,7 +4,7 @@ Dílna výukových her.
 
 ## Aktuální stav
 
-Verze: **1.9.9**
+Verze: **1.10.1**
 
 - build: `npm run build`
 - zdroj dílny: `src/index.html`
@@ -31,3 +31,14 @@ LUDUS obsahuje instalovatelnou PWA vrstvu: manifest, service worker a vlastní i
 ## Dokumentace
 
 Závazná sada manuálů 00–07 je v `docs/manualy/`. Build ji kopíruje také do `dist/docs/manualy/`.
+
+
+## 1.10.1
+
+- Sjednoceno ukládání rozehraných her napříč hotovými enginy.
+- Každý hotový engine teď deklaruje LUDUS progress API v1: `saveProgress`, `loadProgress`, `resumeProgress`, `clearProgress`, `getProgressSummary`.
+- Pas hry a `engines/manifest.json` nově ukazují schopnost save/load/resume.
+
+## 1.10.0
+- Přidány plánované světy Banánová parta (Mimoni) a Továrna na smích (Příšerky s.r.o.).
+- Panel API klíče podporuje trvalé uložení v tomto prohlížeči i dočasné uložení pro relaci.

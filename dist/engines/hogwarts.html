@@ -896,6 +896,7 @@ const LUDUS_GAME_MANIFEST={
     requiresApi:false,
     requiresNetwork:false,
     savesProgress:true,
+    saveLoadResumeApi:'ludus-progress-api-v1',
     teacherMode:true,
     reviewWrongAnswers:true,
     finalBoss:true,
@@ -907,6 +908,7 @@ const LUDUS_GAME_MANIFEST={
     adapter:'adaptLudusContentToGame',
     validator:'validateLudusContentForGame',
     selfTest:'selfTestGame',
+    progressApi:'LUDUS_PROGRESS',
     legacyContentGlobal:'GAME_CONTENT',
     ludusContentGlobal:'LUDUS_CONTENT'
   },
@@ -1225,6 +1227,7 @@ function selfTestGame(){
   const report=validateLudusContentForGame(pack);
   add('default pack validates',report.valid,report.errors.join(' | '));
   add('custom reset modal present',!!document.getElementById('reset-modal'));
+  add('progress API present',typeof window.LUDUS_PROGRESS==='object'||typeof saveProgress==='function');
   add('owner footer present',!!document.querySelector('.ludus-owner-footer'));
   add('offline/no API dependency',!document.querySelector('script[src]')&&!document.querySelector('link[href^="http"]'));
   const ok=tests.every(t=>t.pass);
@@ -1259,12 +1262,24 @@ applyMeta();
 applyThemeVariant();
 applyI18n();
 let G={name:'',teacher:false,house:'',done:Array(STATIONS.length).fill(false),finished:false,finDate:'',cur:null,qIdx:0,answered:false,wbFill:'',wrongQs:[],reviewMode:false,reviewQueue:[],reviewPos:0};
-function save(){localStorage.setItem(SAVE_KEY,JSON.stringify({name:G.name,house:G.house,done:G.done,finished:G.finished,finDate:G.finDate}));}
+function progressPayload(){return {v:1,apiVersion:'ludus-progress-api-v1',engineId:LUDUS_GAME_MANIFEST.engineId,gameId:LUDUS_GAME_MANIFEST.gameId,mechanicId:LUDUS_GAME_MANIFEST.mechanicId,ts:Date.now(),name:G.name,house:G.house,done:G.done,finished:G.finished,finDate:G.finDate};}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(progressPayload()));}catch(_e){}}
 function loadSave(){
   const r=localStorage.getItem(SAVE_KEY);if(!r)return false;
   const d=JSON.parse(r);G.name=d.name||'';G.house=d.house||'';G.done=d.done||Array(STATIONS.length).fill(false);while(G.done.length<STATIONS.length)G.done.push(false);G.finished=d.finished||false;G.finDate=d.finDate||'';
   return !!G.name;
 }
+function readProgressData(){try{const raw=localStorage.getItem(SAVE_KEY);return raw?JSON.parse(raw):null;}catch(_e){return null;}}
+function doneCountFrom(data){const arr=(data&&Array.isArray(data.done))?data.done:[];return arr.filter(Boolean).length;}
+function getProgressSummary(data){data=data||readProgressData();if(!data)return {apiVersion:'ludus-progress-api-v1',engineId:LUDUS_GAME_MANIFEST.engineId,storeKey:SAVE_KEY,exists:false};return {apiVersion:'ludus-progress-api-v1',engineId:LUDUS_GAME_MANIFEST.engineId,gameId:LUDUS_GAME_MANIFEST.gameId,storeKey:SAVE_KEY,exists:!!data.name,name:data.name||'',stage:data.finished?'finished':(data.house?'map':'house'),done:doneCountFrom(data),total:STATIONS.length,finished:!!data.finished,updatedAt:data.ts||null};}
+function hasProgress(){const d=readProgressData();return !!(d&&d.name);}
+function saveProgress(){save();return getProgressSummary();}
+function loadProgress(){return readProgressData();}
+function applyProgressData(data){if(!data)return false;G.name=data.name||'';G.house=data.house||'';G.done=Array.isArray(data.done)?data.done:Array(STATIONS.length).fill(false);while(G.done.length<STATIONS.length)G.done.push(false);G.finished=!!data.finished;G.finDate=data.finDate||'';return !!G.name;}
+function resumeProgress(data){data=data||readProgressData();if(!applyProgressData(data))return false;const ni=document.getElementById('name-in');if(ni)ni.value=G.name;if(G.house)document.body.setAttribute('data-house',G.house);if(G.teacher){document.getElementById('t-banner').style.display='block';document.getElementById('skip-btn').style.display='block';}if(G.finished&&!G.done[6])showCert();else if(!G.house)show('house',true);else{renderMap();show('map',true);}return getProgressSummary(data);}
+function clearProgress(){try{localStorage.removeItem(SAVE_KEY);}catch(_e){}return true;}
+function installLudusProgressApi(){const api={version:'ludus-progress-api-v1',storage:'localStorage',key:SAVE_KEY,saveProgress:saveProgress,loadProgress:loadProgress,resumeProgress:resumeProgress,clearProgress:clearProgress,getProgressSummary:getProgressSummary,hasProgress:hasProgress};window.LUDUS_PROGRESS=api;window.LUDUS_ENGINE_API=Object.assign({},window.LUDUS_ENGINE_API||window.LUDUS_ENGINE||{}, {manifest:LUDUS_GAME_MANIFEST,exerciseSupport:EXERCISE_SUPPORT,themeVariants:THEME_VARIANTS,adapt:adaptLudusContentToGame,validate:validateLudusContentForGame,selfTest:selfTestGame,progress:api,saveProgress:saveProgress,loadProgress:loadProgress,resumeProgress:resumeProgress,clearProgress:clearProgress,getProgressSummary:getProgressSummary});if(window.LUDUS_ENGINE)window.LUDUS_ENGINE.progress=api;}
+installLudusProgressApi();
 
 /* ══════ SCREENS + TRANSITION ══════ */
 let _transLock=false;
@@ -1545,7 +1560,7 @@ function beginJourney(){
 }
 let _resetRequested=false;
 function resetGameState(){
-  localStorage.removeItem(SAVE_KEY);
+  clearProgress();
   G={name:'',teacher:false,house:'',done:Array(STATIONS.length).fill(false),finished:false,finDate:'',cur:null,qIdx:0,answered:false,wbFill:'',wrongQs:[],reviewMode:false,reviewQueue:[],reviewPos:0};
   document.body.removeAttribute('data-house');
   const nameIn=document.getElementById('name-in');if(nameIn)nameIn.value='';
@@ -4659,34 +4674,9 @@ function getScene(id){
 }
 
 
-function showReward(id){
-  const stn=STATIONS[id];
-  const rew=stn.reward;
-  document.getElementById('rew-icon').innerHTML='<div class="rew-seal-ripple"></div>'+waxSealSvg(id);
-  document.getElementById('rew-title').textContent=t('rew_title_full');
-  document.getElementById('rew-item').textContent=t('rew_earned')+rew.name;
-  document.getElementById('rew-desc').textContent=rew.desc;
-  const btn=document.getElementById('rew-btn');
-  btn.textContent=t('btn_return_castle');
-  btn.onclick=goMap;
-  show('reward');
-  const ac=getAC();
-  if(ac){setTimeout(()=>{playTone(80,.22,.4,'sine',0,ac);playTone(120,.18,.28,'sine',.02,ac);playTone(60,.4,.18,'sine',.08,ac);},700);}
-}
-
 /* ══════════════════════════════════════════
    CERTIFICATE
 ══════════════════════════════════════════ */
-function showCert(){
-  document.getElementById('cert-name').textContent=G.name;
-  document.getElementById('cert-date').textContent=t('cert_completed')+(G.finDate||today());
-  document.getElementById('cert-spell').textContent=generateSpell(G.name);
-  const pEl=document.getElementById('cert-patronus');
-  if(pEl)pEl.innerHTML=patronusSvg(G.house||'');
-  const lEl=document.getElementById('cert-patronus-label');
-  if(lEl)lEl.textContent=patronusName(G.house||'');
-  show('cert');
-}
 function patronusName(house){
   const names={gryffindor:'Expecto Patronum · Lion',slytherin:'Expecto Patronum · Serpent',ravenclaw:'Expecto Patronum · Eagle',hufflepuff:'Expecto Patronum · Badger'};
   return names[house]||'Expecto Patronum · Stag';
@@ -5176,17 +5166,7 @@ function patronusSvg(house){
   }
   return `<svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">${defs}${aura}${creature}${swirls}</svg>`;
 }
-function generateSpell(name){
-  const prefixes=['Grammaticus','Relativus','Syntacticus','Clausula','Verbum','Coniungo'];
-  const suffixes=['Revelio','Maxima','Perfectus','Illumino','Claritas','Maestro'];
-  const n=name.trim();
-  const pi=n.charCodeAt(0)%prefixes.length;
-  const si=n.length%suffixes.length;
-  return prefixes[pi]+' '+suffixes[si]+'!';
-}
-function today(){
-  return new Date().toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'});
-}
+
 
 /* ══════════════════════════════════════════
    INIT

@@ -385,6 +385,7 @@
       <label for="keyInput">Klíč k API (Gemini)</label>
       <input id="keyInput" type="password" placeholder="Gemini API klíč (AIza…)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <button class="btn ghost sm" id="btnSession" title="Klíč se po zavření prohlížeče sám zapomene — vhodné i na sdíleném počítači.">Použít jen pro relaci</button>
+      <button class="btn ghost sm" id="btnPersistent" title="Klíč zůstane uložený v tomto prohlížeči, dokud ho nesmažeš. Nepoužívej na sdíleném počítači.">Uložit trvale</button>
       <button class="btn ghost sm" id="btnClearKey">Smazat</button>
     </div>
     <div class="apirow">
@@ -394,7 +395,7 @@
         <button type="button" data-model="gemini-2.5-flash" aria-pressed="true">Flash</button>
         <button type="button" data-model="gemini-2.5-flash-lite" aria-pressed="false">Flash-lite</button>
       </div>
-      <span class="apihint"><span id="modelNote">výchozí, rychlý, slušný free tier</span><br>Při vyčerpání denního limitu se automaticky přepne na další model (Flash-lite má nejvíc requestů zdarma, Pro nejméně). Klíč se posílá jen Googlu — nikdy ho nedávej do HTML na GitHubu.</span>
+      <span class="apihint"><span id="modelNote">výchozí, rychlý, slušný free tier</span><br>Při vyčerpání denního limitu se automaticky přepne na další model (Flash-lite má nejvíc requestů zdarma, Pro nejméně). Klíč se posílá jen Googlu. Trvalé uložení používej jen na vlastním zařízení; klíč nikdy nedávej přímo do HTML na GitHubu.</span>
     </div>
   </div>
 
@@ -1290,9 +1291,9 @@ const ENGINE_BASE='engines/';
    ===================================================================== */
 const ENGINE_STATUSES={ready:1,draft:1,wip:1,'in-progress':1,generic:1,'content-only':1,planned:1};
 const GAME_CAPS={
-  academyBoss:{hasMap:true,hasStations:true,hasBoss:true,hasClues:false,hasFinalCode:false,hasLeaderboard:false,hasSimulation:false},
-  questNoBoss:{hasMap:true,hasStations:false,hasBoss:false,hasClues:false,hasFinalCode:false,hasLeaderboard:false,hasSimulation:false},
-  contentOnly:{hasMap:false,hasStations:false,hasBoss:false,hasClues:false,hasFinalCode:false,hasLeaderboard:false,hasSimulation:false}
+  academyBoss:{hasMap:true,hasStations:true,hasBoss:true,hasClues:false,hasFinalCode:false,hasLeaderboard:false,hasSimulation:false,hasSaveLoadResume:true},
+  questNoBoss:{hasMap:true,hasStations:false,hasBoss:false,hasClues:false,hasFinalCode:false,hasLeaderboard:false,hasSimulation:false,hasSaveLoadResume:true},
+  contentOnly:{hasMap:false,hasStations:false,hasBoss:false,hasClues:false,hasFinalCode:false,hasLeaderboard:false,hasSimulation:false,hasSaveLoadResume:false}
 };
 const FLOW_MODELS={
   mapStationsFinalChallenge:'mapa · stanice · závěrečná výzva',
@@ -1302,11 +1303,11 @@ const FLOW_MODELS={
   labSimulation:'laboratoř / simulace',
   drillTrainer:'procvičovací trenažér bez příběhového finále'
 };
-const READY_CONTRACT=['manifest','supportedExerciseTypes','i18n','themeVariants','adapter','contentV2','flowModel','capabilities'];
+const READY_CONTRACT=['manifest','supportedExerciseTypes','i18n','themeVariants','adapter','contentV2','flowModel','capabilities','progressApi'];
 const ALL_CONTENT_LANGS=['cs','en'];
 const ES_CONTENT_LANGS=['cs','en','es'];
-const DEFAULT_READY_CONTRACT={manifest:'vložený v HTML enginu',supportedExerciseTypes:'deklarováno v manifestu enginu',i18n:'vložené v HTML enginu',themeVariants:'official + safe vložené v HTML enginu',adapter:'adaptér na LUDUS_CONTENT v2 vložený (přijímá i v1)',contentV2:'LUDUS posílá v2 vedle GAME_CONTENT v1',flowModel:'deklarováno v manifestu',capabilities:'deklarováno v manifestu'};
-const DEFAULT_DRAFT_CONTRACT={manifest:'deklarováno v engines/manifest.json',supportedExerciseTypes:'deklarováno v LUDUS manifestu',i18n:'čeká na build enginu',themeVariants:'čeká na build enginu',adapter:'čeká na build enginu',contentV2:'LUDUS posílá v2 vedle GAME_CONTENT v1',flowModel:'deklarováno v manifestu',capabilities:'deklarováno v manifestu'};
+const DEFAULT_READY_CONTRACT={manifest:'vložený v HTML enginu',supportedExerciseTypes:'deklarováno v manifestu enginu',i18n:'vložené v HTML enginu',themeVariants:'official + safe vložené v HTML enginu',adapter:'adaptér na LUDUS_CONTENT v2 vložený (přijímá i v1)',contentV2:'LUDUS posílá v2 vedle GAME_CONTENT v1',flowModel:'deklarováno v manifestu',capabilities:'deklarováno v manifestu',progressApi:'ludus-progress-api-v1: saveProgress/loadProgress/resumeProgress/clearProgress/getProgressSummary'};
+const DEFAULT_DRAFT_CONTRACT={manifest:'deklarováno v engines/manifest.json',supportedExerciseTypes:'deklarováno v LUDUS manifestu',i18n:'čeká na build enginu',themeVariants:'čeká na build enginu',adapter:'čeká na build enginu',contentV2:'LUDUS posílá v2 vedle GAME_CONTENT v1',flowModel:'deklarováno v manifestu',capabilities:'deklarováno v manifestu',progressApi:'čeká na build enginu'};
 const GAME_ENGINES={
   'arcanum:academy':{skinId:'arcanum',gameId:'arcanum',gameIdAliases:['hogwarts','hogwarts-grammar-academy'],mechanicId:'academy',title:'Akademie Arkána',engine:ENGINE_BASE+'hogwarts.html',engineKind:'single-html',status:'ready',uiStatus:'hotová',statusLabel:{cs:'Hotová',en:'Ready'},pack:'ACADEMY_RC_PACK',contentTopicId:'relclauses',supports:['classify','mc4','mc2','wordbank','yesno'],supportedExerciseTypes:['mcq','trueFalse','classify','wordBank'],flowModel:'mapStationsFinalChallenge',capabilities:GAME_CAPS.academyBoss,uiLanguages:['cs','en'],contentLanguages:ALL_CONTENT_LANGS,supportLanguages:ALL_CONTENT_LANGS,brandModes:['official','safe'],contract:Object.assign({},DEFAULT_READY_CONTRACT)},
   'knights:academy':{skinId:'knights',gameId:'starwars',gameIdAliases:['knights','star-knights'],mechanicId:'academy',title:'Hvězdní rytíři',engine:ENGINE_BASE+'star-wars.html',engineKind:'single-html',status:'ready',uiStatus:'hotová',statusLabel:{cs:'Hotová',en:'Ready'},pack:'ACADEMY_RC_PACK',contentTopicId:'template',supports:['classify','mc4','mc2','wordbank','yesno'],supportedExerciseTypes:['mcq','trueFalse','classify','wordBank'],flowModel:'mapStationsFinalChallenge',capabilities:GAME_CAPS.academyBoss,uiLanguages:['cs','en'],contentLanguages:ES_CONTENT_LANGS,supportLanguages:ES_CONTENT_LANGS,brandModes:['official','safe'],contract:Object.assign({},DEFAULT_READY_CONTRACT)},
@@ -1328,7 +1329,7 @@ function engineStatusCss(st){st=normalizeEngineStatus(st);return st==='ready'||s
 function engineStatusIcon(st){st=normalizeEngineStatus(st);return st==='ready'||st==='generic'?'✓':(st==='draft'?'◐':'⌛');}
 function engineStatusBadge(eng){const st=normalizeEngineStatus(eng&&eng.status);return '<div class="ebadge '+engineStatusCss(st)+'">'+engineStatusIcon(st)+' '+esc(engineStatusLabel(eng||st))+'</div>';}
 function flowLabel(id){return FLOW_MODELS[id]||id||'neuvedeno';}
-function capLabel(k){return ({hasMap:'mapa',hasStations:'stanice',hasBoss:'boss',hasClues:'stopy',hasFinalCode:'finální kód',hasLeaderboard:'žebříček',hasSimulation:'simulace'})[k]||k;}
+function capLabel(k){return ({hasMap:'mapa',hasStations:'stanice',hasBoss:'boss',hasClues:'stopy',hasFinalCode:'finální kód',hasLeaderboard:'žebříček',hasSimulation:'simulace',hasSaveLoadResume:'save/load/resume'})[k]||k;}
 function engineCaps(eng){return Object.assign({},GAME_CAPS.contentOnly,(eng&&eng.capabilities)||{});}
 function langOptionsFor(kind,eng){
   const all=Object.keys(LANGS);
@@ -1359,7 +1360,7 @@ function setThemeMode(mode){
 }
 function readinessRows(eng){
   const c=(eng&&eng.contract)||{};
-  return READY_CONTRACT.map(k=>({key:k,label:({manifest:'manifest v HTML hře',supportedExerciseTypes:'podporované typy cvičení',i18n:'I18N slovník',themeVariants:'safe/official tematické balíčky',adapter:'adaptér na LUDUS_CONTENT v2',contentV2:'příjem LUDUS_CONTENT v2',flowModel:'flowModel',capabilities:'capabilities'})[k]||k,value:c[k]||'nezjištěno'}));
+  return READY_CONTRACT.map(k=>({key:k,label:({manifest:'manifest v HTML hře',supportedExerciseTypes:'podporované typy cvičení',i18n:'I18N slovník',themeVariants:'safe/official tematické balíčky',adapter:'adaptér na LUDUS_CONTENT v2',contentV2:'příjem LUDUS_CONTENT v2',flowModel:'flowModel',capabilities:'capabilities',progressApi:'save/load/resume API'})[k]||k,value:c[k]||'nezjištěno'}));
 }
 function readinessScore(eng){const rows=readinessRows(eng);let ok=0;rows.forEach(r=>{if(/deklarováno|posílá|hotovo|připraveno/i.test(r.value))ok++;});return {ok,total:rows.length};}
 function capBadges(eng){const caps=engineCaps(eng);return Object.keys(caps).map(k=>'<span class="cap '+(caps[k]?'on':'off')+'">'+(caps[k]?'✓ ':'– ')+esc(capLabel(k))+'</span>').join('');}
@@ -1524,18 +1525,19 @@ const G_FALLBACK_ORDER=["gemini-2.5-flash-lite","gemini-2.5-flash","gemini-2.5-p
 const G_FALLBACKS=G_FALLBACK_ORDER.slice();
 const modelLabel=id=>{const m=G_MODELS.find(x=>x.id===id);return m?m.label:id;};
 const G_TIMEOUT=45000, G_KEY_SK="ludus_gemini_key", G_KEY_SESSION_SK="ludus_gemini_key_session", G_MODEL_SK="ludus_gemini_model";
-let geminiApiKey="", geminiModel=G_MODEL_DEFAULT;
+let geminiApiKey="", geminiModel=G_MODEL_DEFAULT, geminiKeyScope="";
 const cleanKey=s=>String(s||"").replace(/[^\x21-\x7E]/g,"");
 const isValidModel=n=>/^gemini[-a-z0-9.]+$/i.test(String(n||"").trim());
 function mkErr(m,c){const e=new Error(m);e.code=c||"APP";return e;}
 function extractJson(raw){const s=String(raw||"").trim();const a=s.indexOf("{"),b=s.lastIndexOf("}");if(a>=0&&b>a)return s.slice(a,b+1);const a2=s.indexOf("["),b2=s.lastIndexOf("]");if(a2>=0&&b2>a2)return s.slice(a2,b2+1);return s;}
-function gErr(e){if(!e)return"Neznámá chyba.";if(e.code==="MISSING_KEY")return"Chybí API klíč — vlož ho nahoře v „Klíč k API“.";if(e.code==="TIMEOUT")return"Model neodpověděl včas, zkus to znovu.";if(e.status===401||e.status===403)return"Klíč není platný nebo nemá oprávnění.";if(e.status===400)return"Gemini odmítlo požadavek (zkontroluj délku a téma).";if(e.quota)return"Kvóta/limit API vyčerpán — zkus lehčí model nebo počkej.";if(e.status>=500)return"Služba Gemini má dočasný problém, zkus to znovu.";return e.message||"Nepovedlo se spojit s modelem.";}
-function updateKeyUI(){const b=$('#keyBadge');if(b){b.textContent=geminiApiKey?"klíč: aktivní":"klíč: nezadán";b.className="kbadge "+(geminiApiKey?"on":"off");}const ti=$('#keyInput');if(ti&&!ti.value&&geminiApiKey)ti.value=geminiApiKey;renderModelSeg();}
+function gErr(e){if(!e)return"Neznámá chyba.";if(e.code==="MISSING_KEY")return"Chybí API klíč — vlož ho nahoře v „Klíč k API“ a zvol uložení pro relaci nebo trvale v tomto prohlížeči.";if(e.code==="TIMEOUT")return"Model neodpověděl včas, zkus to znovu.";if(e.status===401||e.status===403)return"Klíč není platný nebo nemá oprávnění.";if(e.status===400)return"Gemini odmítlo požadavek (zkontroluj délku a téma).";if(e.quota)return"Kvóta/limit API vyčerpán — zkus lehčí model nebo počkej.";if(e.status>=500)return"Služba Gemini má dočasný problém, zkus to znovu.";return e.message||"Nepovedlo se spojit s modelem.";}
+function updateKeyUI(){const b=$('#keyBadge');if(b){const scope=geminiApiKey?(geminiKeyScope==='persistent'?' · trvale':(geminiKeyScope==='session'?' · relace':'')):'';b.textContent=geminiApiKey?("klíč: aktivní"+scope):"klíč: nezadán";b.className="kbadge "+(geminiApiKey?"on":"off");}const ti=$('#keyInput');if(ti&&!ti.value&&geminiApiKey)ti.value=geminiApiKey;renderModelSeg();}
 function renderModelSeg(){document.querySelectorAll('[data-model]').forEach(btn=>btn.setAttribute('aria-pressed',btn.dataset.model===geminiModel));const n=$('#modelNote');if(n){const m=G_MODELS.find(x=>x.id===geminiModel);n.textContent=m?m.note:'';}}
-function loadKey(){let s="",p="";try{s=sessionStorage.getItem(G_KEY_SESSION_SK)||"";}catch(_){}try{p=localStorage.getItem(G_KEY_SK)||"";}catch(_){}geminiApiKey=cleanKey(s||p);updateKeyUI();}
+function loadKey(){let s="",p="";try{s=sessionStorage.getItem(G_KEY_SESSION_SK)||"";}catch(_){}try{p=localStorage.getItem(G_KEY_SK)||"";}catch(_){}geminiApiKey=cleanKey(s||p);geminiKeyScope=s?'session':(p?'persistent':'');updateKeyUI();}
 function loadModel(){let s="";try{s=localStorage.getItem(G_MODEL_SK)||"";}catch(_){}geminiModel=isValidModel(s)?s.toLowerCase():G_MODEL_DEFAULT;}
-function useKeySession(){const k=cleanKey($('#keyInput').value);try{k?sessionStorage.setItem(G_KEY_SESSION_SK,k):sessionStorage.removeItem(G_KEY_SESSION_SK);}catch(_){}geminiApiKey=k;updateKeyUI();toast(k?"Klíč uložen pro relaci ✓":"Klíč smazán.");}
-function clearKeyAll(){try{sessionStorage.removeItem(G_KEY_SESSION_SK);}catch(_){}try{localStorage.removeItem(G_KEY_SK);}catch(_){}geminiApiKey="";const ti=$('#keyInput');if(ti)ti.value="";updateKeyUI();toast("Klíč smazán.");}
+function useKeySession(){const k=cleanKey($('#keyInput').value);try{k?sessionStorage.setItem(G_KEY_SESSION_SK,k):sessionStorage.removeItem(G_KEY_SESSION_SK);}catch(_){}geminiApiKey=k;geminiKeyScope=k?'session':'';updateKeyUI();toast(k?"Klíč uložen jen pro tuto relaci ✓":"Klíč pro relaci smazán.");}
+function useKeyPersistent(){const k=cleanKey($('#keyInput').value);try{k?localStorage.setItem(G_KEY_SK,k):localStorage.removeItem(G_KEY_SK);sessionStorage.removeItem(G_KEY_SESSION_SK);}catch(_){}geminiApiKey=k;geminiKeyScope=k?'persistent':'';updateKeyUI();toast(k?"Klíč uložen trvale v tomto prohlížeči ✓":"Trvale uložený klíč smazán.");}
+function clearKeyAll(){try{sessionStorage.removeItem(G_KEY_SESSION_SK);}catch(_){}try{localStorage.removeItem(G_KEY_SK);}catch(_){}geminiApiKey="";geminiKeyScope="";const ti=$('#keyInput');if(ti)ti.value="";updateKeyUI();toast("Klíč smazán.");}
 function setModel(n){const v=String(n||"").trim().toLowerCase();geminiModel=isValidModel(v)?v:G_MODEL_DEFAULT;try{localStorage.setItem(G_MODEL_SK,geminiModel);}catch(_){}renderModelSeg();}
 const G_LANG_SK="ludus_langs";
 function renderLangSeg(){
@@ -1686,6 +1688,8 @@ const SKINS = [
   // obecné světy napříč předměty (Laboratoř, Časová osa, vědy, dějepis, informatika…)
   {id:'forensic',     safe:'Forenzní laboratoř',     en:'Forensic Lab',        free:true, frames:['lab','detective','escape'],          c:'#7fd3ff', ic:'🔬', dom:['science','ict','civics']},
   {id:'dino',         safe:'Dino park',              en:'Dino Park',           brand:'Jurassic Park',            twin:true, frames:['lab','quest','collection','escape'], c:'#8ec63f', ic:'🦖', dom:['science','geography','history']},
+  {id:'bananacrew',   safe:'Banánová parta',          en:'Banana Crew',         brand:'Mimoni',                   twin:true, frames:['collection','quizShow','boss'],      c:'#ffd84d', ic:'🍌', dom:['language','cross']},
+  {id:'laughworks',   safe:'Továrna na smích',        en:'Laughworks Factory',  brand:'Příšerky s.r.o.',          twin:true, frames:['roleSim','lab','collection','escape'], c:'#5ed6d1', ic:'🚪', dom:['language','civics','cross']},
   {id:'chambers',     safe:'Testovací komory',       en:'Test Chambers',       brand:'Portal',                   twin:true, frames:['lab','escape','boss'],              c:'#5fd0c8', ic:'🧪', dom:['math','ict','science']},
   {id:'illusion',     safe:'Síť iluzí',              en:'The Illusion Grid',   brand:'Matrix',                   twin:true, frames:['lab','escape','detective'],         c:'#56d364', ic:'🟢', dom:['ict','math','science']},
   {id:'timepatrol',   safe:'Časová hlídka',          en:'Time Patrol',         brand:'Doctor Who / Návrat do budoucnosti', twin:true, frames:['timeline','quest','lab'],     c:'#6cc8ff', ic:'⏳', dom:['history','literature','science']},
@@ -2737,9 +2741,11 @@ function buildLessonPackHtml(spec,tasks){
 }
 
 /* ============================ APP IDENTITY: changelog, owner, guide, tests ============================ */
-const APP_VERSION='1.9.9';
+const APP_VERSION='1.10.1';
 const CHANGELOG_LIMIT=10;
 const CHANGELOG=[
+  '1.10.1: Sjednoceno ukládání rozehraných her: hotové enginy mají společné LUDUS progress API v1 (saveProgress, loadProgress, resumeProgress, clearProgress, getProgressSummary). Pas hry i manifest deklarují save/load/resume jako schopnost enginu.',
+  '1.10.0: Přidány plánované světy Mimoni jako Banánová parta a Příšerky s.r.o. jako Továrna na smích. Panel API klíče má nové tlačítko Uložit trvale — klíč se ukládá do localStorage v daném prohlížeči, zatímco volba Použít jen pro relaci dál používá sessionStorage.',
   '1.9.9: LOTR / Rozlomené království má doplněný funkční single-HTML engine podle šablony LUDUS: vlastní LUDUS_GAME_MANIFEST, I18N cs/en, THEME_VARIANTS official/safe, EXERCISE_SUPPORT, validátor, adaptér na LUDUS_CONTENT v2 i zpětnou podporu GAME_CONTENT v1. V engines/manifest.json je LOTR přepnutý z draft na ready.',
   '1.9.8: engines/manifest.json je rozšířený z pouhého seznamu stavů na kanonický katalog enginů — LUDUS z něj přebírá gameId, mechanicId, soubor enginu, flowModel, jazyky, typy cvičení, capabilities i kontrolní smlouvu. Star Wars / Hvězdní rytíři mají sjednocené gameId na starwars, starý skinId knights zůstává jen jako výběr světa v UI. Manuály 00–07 jsou přidané do docs/manualy a build je kopíruje do dist/docs.',
   '1.9.7: Stav her (hotová / rozpracovaná / plánovaná) se teď čte z engines/manifest.json — je to jediný zdroj pravdy. Stačí ho změnit na jednom místě v manifestu; hodnota v registru enginů zůstává jen jako záloha pro případ, že by manifest nešel načíst (offline). Stav se páruje přes název .html souboru a po načtení manifestu se karty světů, Pas hry i preflight překreslí.',
@@ -2778,7 +2784,7 @@ function openChangelog(){
   modalOpen('Changelog','<p>Posledních '+CHANGELOG_LIMIT+' změn v LUDUS. Starší se při přidání nové automaticky odříznou.</p><div class="modal-list">'+rows+'</div>');
 }
 function openOwner(){
-  modalOpen('Vlastník aplikace','<div class="modal-kv"><div><b>Aplikace</b><span>LUDUS — dílna výukových her</span></div><div><b>Verze</b><span>'+esc(APP_VERSION)+'</span></div><div><b>Vlastník</b><span>Daniel Baláž · Gymnázium, Ostrava-Hrabůvka</span></div><div><b>Engine</b><span>Akademie (z Hogwarts)</span></div><div><b>Obsah</b><span>Google Gemini (klíč jen pro relaci)</span></div><div><b>Copyright</b><span>© 2026 Daniel Baláž</span></div></div>');
+  modalOpen('Vlastník aplikace','<div class="modal-kv"><div><b>Aplikace</b><span>LUDUS — dílna výukových her</span></div><div><b>Verze</b><span>'+esc(APP_VERSION)+'</span></div><div><b>Vlastník</b><span>Daniel Baláž · Gymnázium, Ostrava-Hrabůvka</span></div><div><b>Engine</b><span>Akademie (z Hogwarts)</span></div><div><b>Obsah</b><span>Google Gemini (klíč pro relaci nebo trvale v prohlížeči)</span></div><div><b>Copyright</b><span>© 2026 Daniel Baláž</span></div></div>');
 }
 function openGuide(){
   modalOpen('Jak se v Ludusu orientovat',
@@ -2786,7 +2792,7 @@ function openGuide(){
     '<div class="guide-step"><span class="gnum">I</span><div><b>Mechanika</b><small>Vyber, jak se hraje — kampaň, quest, únikovka, detektivka, souboj a další.</small></div></div>'+
     '<div class="guide-step"><span class="gnum">II</span><div><b>Svět</b><small>Oblékni mechaniku do atmosféry. Pro veřejné sdílení drž bezpečné nebo volné světy.</small></div></div>'+
     '<div class="guide-step"><span class="gnum">III</span><div><b>Obsah</b><small>Zadej učivo. Jádro spočítá shodu a doporučí vhodné mini-hry, pak vygeneruj hru přes Gemini.</small></div></div>'+
-    '<p style="margin-top:12px"><b>Tip pro kolegy:</b> klíč k API zadej nahoře přes 🔑 a zvol „jen pro relaci“ — na sdíleném počítači se po zavření prohlížeče sám zapomene.</p>');
+    '<p style="margin-top:12px"><b>Tip pro kolegy:</b> klíč k API zadej nahoře přes 🔑. Na vlastním zařízení můžeš použít „Uložit trvale“, na sdíleném počítači raději „jen pro relaci“.</p>');
 }
 /* ---- uvítací návod při prvním spuštění ---- */
 const INTRO_SK='ludus_intro_done';
@@ -2863,6 +2869,7 @@ function selfTests(){
   add(C.game,'Engine je registrovaný a balíček je validní', ()=>!!getGameEngine('arcanum','academy')&&getGameEngine('arcanum','academy').status==='ready'&&getGameEngine('arcanum','academy').contentTopicId==='relclauses'&&ACADEMY_RC_PACK&&Array.isArray(ACADEMY_RC_PACK.stations)&&ACADEMY_RC_PACK.stations.length>=5, ()=>(ACADEMY_RC_PACK.stations||[]).length+' stanic');
   add(C.game,'GAME_ENGINES: platné stavy, ready/draft má engine', ()=>Object.values(GAME_ENGINES).every(e=>ENGINE_STATUSES[e.status]&&((e.status==='ready'||e.status==='draft')?!!e.engine:true)), ()=>Object.keys(GAME_ENGINES).length+' enginů');
   add(C.game,'GAME_ENGINES: flowModel, capabilities a smlouva hotové hry', ()=>Object.values(GAME_ENGINES).every(e=>!!e.flowModel&&FLOW_MODELS[e.flowModel]&&e.capabilities&&typeof e.capabilities.hasBoss==='boolean'&&e.contract&&READY_CONTRACT.every(k=>k in e.contract)), 'pas hry připraven');
+  add(C.game,'Hotové enginy deklarují save/load/resume API', ()=>Object.values(GAME_ENGINES).filter(e=>normalizeEngineStatus(e.status)==='ready').every(e=>e.capabilities&&e.capabilities.hasSaveLoadResume===true&&e.contract&&/ludus-progress-api-v1/.test(e.contract.progressApi||'')), 'progress API v1');
   add(C.game,'Engine se řeší podle svět+mechanika (ne jen mechanika)', ()=>{const a=getGameEngine('arcanum','academy'),k=getGameEngine('knights','academy');return !!a&&!!k&&k.gameId==='starwars'&&a.engine!==k.engine&&getGameEngine('arcanum','quest')===null;}, 'svět+mechanika');
   add(C.game,'Generování hry přes Gemini je připojené', ()=>typeof generateAndAssemble==='function'&&$('#build').onclick.toString().includes('generateAndAssemble'), 'build → Gemini');
   add(C.game,'normalizeStations odfiltruje neplatné typy', ()=>normalizeStations([{ex:{type:'nope',qs:[1]}},{name:'X',icon:'⭐',ex:{type:'mc4',qs:[{t:'a',opts:['a','b','c','d'],a:0,exp:''}]}}]).length===1, 'jen platné ex.type');
@@ -2927,6 +2934,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#infoModal').cla
 /* ---- init ---- */
 $('#apiToggle').onclick=()=>{const p=$('#apiPanel');p.hidden=!p.hidden;if(!p.hidden){const k=$('#keyInput');if(k)k.focus();}};
 $('#btnSession').onclick=()=>useKeySession();
+$('#btnPersistent').onclick=()=>useKeyPersistent();
 $('#btnClearKey').onclick=()=>clearKeyAll();
 $('#keyInput').addEventListener('input',()=>{geminiApiKey=cleanKey($('#keyInput').value);updateKeyUI();});
 document.querySelectorAll('[data-model]').forEach(btn=>btn.onclick=()=>{setModel(btn.dataset.model);beep(560,.06,'sine');toast('Model: '+modelLabel(geminiModel));});

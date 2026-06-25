@@ -1,7 +1,7 @@
 {
   "schemaVersion": "ludus-engines-manifest-v2",
   "updatedAt": "2026-06-25",
-  "note": "Kanonický katalog enginů. V LUDUSu už není nutné měnit zvlášť index kvůli stavu ani běžným metadatům enginu; index obsahuje jen fallback pro offline/file:// režim.",
+  "note": "Kanonický katalog enginů a plánovaných světů. Ready/draft/planned se promítá do LUDUSu z manifestu; index obsahuje jen fallback pro offline/file:// režim.",
   "statusLabels": {
     "ready": {
       "cs": "Hotová",
@@ -88,7 +88,8 @@
         "hasClues": false,
         "hasFinalCode": false,
         "hasLeaderboard": false,
-        "hasSimulation": false
+        "hasSimulation": false,
+        "hasSaveLoadResume": true
       },
       "contract": {
         "manifest": "vložený v HTML enginu + zrcadlený v engines/manifest.json",
@@ -98,7 +99,20 @@
         "adapter": "adaptér na LUDUS_CONTENT v2 vložený (přijímá i v1)",
         "contentV2": "LUDUS posílá v2 vedle GAME_CONTENT v1",
         "flowModel": "deklarováno v manifestu",
-        "capabilities": "deklarováno v manifestu"
+        "capabilities": "deklarováno v manifestu",
+        "progressApi": "ludus-progress-api-v1: saveProgress/loadProgress/resumeProgress/clearProgress/getProgressSummary"
+      },
+      "progressApi": {
+        "version": "ludus-progress-api-v1",
+        "storage": "localStorage",
+        "methods": [
+          "saveProgress",
+          "loadProgress",
+          "resumeProgress",
+          "clearProgress",
+          "getProgressSummary",
+          "hasProgress"
+        ]
       }
     },
     {
@@ -168,7 +182,8 @@
         "hasClues": false,
         "hasFinalCode": false,
         "hasLeaderboard": false,
-        "hasSimulation": false
+        "hasSimulation": false,
+        "hasSaveLoadResume": true
       },
       "contract": {
         "manifest": "vložený v HTML enginu + zrcadlený v engines/manifest.json",
@@ -178,7 +193,20 @@
         "adapter": "adaptér na LUDUS_CONTENT v2 vložený (přijímá i v1)",
         "contentV2": "LUDUS posílá v2 vedle GAME_CONTENT v1",
         "flowModel": "deklarováno v manifestu",
-        "capabilities": "deklarováno v manifestu"
+        "capabilities": "deklarováno v manifestu",
+        "progressApi": "ludus-progress-api-v1: saveProgress/loadProgress/resumeProgress/clearProgress/getProgressSummary"
+      },
+      "progressApi": {
+        "version": "ludus-progress-api-v1",
+        "storage": "localStorage",
+        "methods": [
+          "saveProgress",
+          "loadProgress",
+          "resumeProgress",
+          "clearProgress",
+          "getProgressSummary",
+          "hasProgress"
+        ]
       }
     },
     {
@@ -243,7 +271,8 @@
         "hasLeaderboard": false,
         "hasSimulation": false,
         "hasFinalChallenge": true,
-        "hasInventory": true
+        "hasInventory": true,
+        "hasSaveLoadResume": true
       },
       "contract": {
         "manifest": "vložený v HTML enginu + zrcadlený v engines/manifest.json",
@@ -253,7 +282,8 @@
         "adapter": "adaptér na LUDUS_CONTENT v2 vložený (přijímá i v1)",
         "contentV2": "LUDUS posílá v2 vedle GAME_CONTENT v1",
         "flowModel": "deklarováno v manifestu",
-        "capabilities": "deklarováno v manifestu"
+        "capabilities": "deklarováno v manifestu",
+        "progressApi": "ludus-progress-api-v1: saveProgress/loadProgress/resumeProgress/clearProgress/getProgressSummary"
       },
       "engineVersion": "1.0.0-ludus-interop",
       "gameIdAliases": [
@@ -262,7 +292,181 @@
         "middle-earth",
         "middleearth",
         "lotr-grammar-quest"
-      ]
+      ],
+      "progressApi": {
+        "version": "ludus-progress-api-v1",
+        "storage": "localStorage",
+        "methods": [
+          "saveProgress",
+          "loadProgress",
+          "resumeProgress",
+          "clearProgress",
+          "getProgressSummary",
+          "hasProgress"
+        ]
+      }
+    },
+    {
+      "id": "minions-collection-planned",
+      "gameKey": "bananacrew:collection",
+      "skinId": "bananacrew",
+      "gameId": "minions",
+      "gameIdAliases": [
+        "bananacrew",
+        "banana-crew"
+      ],
+      "mechanicId": "collection",
+      "name": "Banánová parta",
+      "title": {
+        "cs": "Banánová parta",
+        "en": "Banana Crew",
+        "officialCs": "Mimoni",
+        "officialEn": "Minions"
+      },
+      "contentTopicId": "template",
+      "addedVersion": "1.10.0",
+      "status": "planned",
+      "flowModel": "drillTrainer",
+      "engineKind": "planned-single-html",
+      "supportedMechanics": [
+        "collection",
+        "quizShow",
+        "boss"
+      ],
+      "supports": [
+        "mc4",
+        "mc2",
+        "yesno",
+        "wordbank",
+        "classify"
+      ],
+      "supportedExerciseTypes": [
+        "mcq",
+        "trueFalse",
+        "classify",
+        "wordBank"
+      ],
+      "uiLanguages": [
+        "cs",
+        "en"
+      ],
+      "contentLanguages": [
+        "cs",
+        "en",
+        "es"
+      ],
+      "supportLanguages": [
+        "cs",
+        "en",
+        "es"
+      ],
+      "brandModes": [
+        "official",
+        "safe"
+      ],
+      "capabilities": {
+        "hasMap": false,
+        "hasStations": false,
+        "hasBoss": false,
+        "hasClues": false,
+        "hasFinalCode": false,
+        "hasLeaderboard": false,
+        "hasSimulation": false,
+        "hasSaveLoadResume": false
+      },
+      "contract": {
+        "manifest": "plánovaný svět deklarovaný v engines/manifest.json",
+        "supportedExerciseTypes": "zatím orientační návrh; bude potvrzen při stavbě enginu",
+        "i18n": "čeká na build enginu",
+        "themeVariants": "čeká na build enginu",
+        "adapter": "čeká na build enginu",
+        "contentV2": "LUDUS umí poslat v2 obsah; engine zatím neexistuje",
+        "flowModel": "návrh deklarovaný v manifestu",
+        "capabilities": "návrh deklarovaný v manifestu",
+        "progressApi": "čeká na build enginu"
+      }
+    },
+    {
+      "id": "monsters-role-sim-planned",
+      "gameKey": "laughworks:roleSim",
+      "skinId": "laughworks",
+      "gameId": "monsters",
+      "gameIdAliases": [
+        "laughworks",
+        "laughworks-factory",
+        "monsters-inc"
+      ],
+      "mechanicId": "roleSim",
+      "name": "Továrna na smích",
+      "title": {
+        "cs": "Továrna na smích",
+        "en": "Laughworks Factory",
+        "officialCs": "Příšerky s.r.o.",
+        "officialEn": "Monsters, Inc."
+      },
+      "contentTopicId": "template",
+      "addedVersion": "1.10.0",
+      "status": "planned",
+      "flowModel": "drillTrainer",
+      "engineKind": "planned-single-html",
+      "supportedMechanics": [
+        "roleSim",
+        "lab",
+        "collection",
+        "escape"
+      ],
+      "supports": [
+        "mc4",
+        "mc2",
+        "yesno",
+        "wordbank",
+        "classify"
+      ],
+      "supportedExerciseTypes": [
+        "mcq",
+        "trueFalse",
+        "classify",
+        "wordBank"
+      ],
+      "uiLanguages": [
+        "cs",
+        "en"
+      ],
+      "contentLanguages": [
+        "cs",
+        "en",
+        "es"
+      ],
+      "supportLanguages": [
+        "cs",
+        "en",
+        "es"
+      ],
+      "brandModes": [
+        "official",
+        "safe"
+      ],
+      "capabilities": {
+        "hasMap": false,
+        "hasStations": false,
+        "hasBoss": false,
+        "hasClues": false,
+        "hasFinalCode": false,
+        "hasLeaderboard": false,
+        "hasSimulation": false,
+        "hasSaveLoadResume": false
+      },
+      "contract": {
+        "manifest": "plánovaný svět deklarovaný v engines/manifest.json",
+        "supportedExerciseTypes": "zatím orientační návrh; bude potvrzen při stavbě enginu",
+        "i18n": "čeká na build enginu",
+        "themeVariants": "čeká na build enginu",
+        "adapter": "čeká na build enginu",
+        "contentV2": "LUDUS umí poslat v2 obsah; engine zatím neexistuje",
+        "flowModel": "návrh deklarovaný v manifestu",
+        "capabilities": "návrh deklarovaný v manifestu",
+        "progressApi": "čeká na build enginu"
+      }
     }
   ]
 }

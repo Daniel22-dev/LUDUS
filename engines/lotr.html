@@ -616,6 +616,7 @@ const RACE_NAMES={hobit:'Hobbit',elf:'Elf',trpaslik:'Dwarf',hranicar:'Ranger'};
 const LUDUS_GAME_MANIFEST={
   schemaVersion:'ludus-game-manifest-v1',
   gameId:'lotr',
+  engineId:'lotr-grammar-quest',
   gameIdAliases:['sundered','sundered-realm','middle-earth','middleearth','lotr-grammar-quest'],
   mechanicId:'quest',
   engineVersion:'1.0.0-ludus-interop',
@@ -633,7 +634,7 @@ const LUDUS_GAME_MANIFEST={
   minTasksPerStation:3,
   boss:{supported:true,minTasks:3,recommendedTasks:6},
   accepts:{contentSchema:'ludus-content-v2'},
-  capabilities:{hasIntro:true,hasMap:true,hasStations:true,hasBoss:true,hasFinalChallenge:true,hasInventory:true,hasClues:false,hasFinalCode:false,hasLeaderboard:false,supportsTeams:false,offline:true,singleHtml:true},
+  capabilities:{hasIntro:true,hasMap:true,hasStations:true,hasBoss:true,hasFinalChallenge:true,hasInventory:true,hasClues:false,hasFinalCode:false,hasLeaderboard:false,supportsTeams:false,offline:true,singleHtml:true,savesProgress:true,saveLoadResumeApi:'ludus-progress-api-v1'},
   requiredContentBlocks:['stations'],
   optionalContentBlocks:['intro','finalChallenge','boss','rewards'],
   exportNotes:['Hotový export nesmí obsahovat API key.','Veřejný export má používat brandMode=safe.','Obsah se vkládá jako window.LUDUS_CONTENT před spuštěním enginu.']
@@ -821,6 +822,7 @@ function selfTestGame(){
     {name:'adapter',ok:typeof adaptLudusContentToLotr==='function'},
     {name:'validator',ok:typeof validateLudusContent==='function'},
     {name:'fallbackContent',ok:Array.isArray(LOCATIONS)&&LOCATIONS.length>0&&LOCATIONS.some(s=>s.boss)},
+    {name:'progressApi',ok:typeof window.LUDUS_PROGRESS==='object'||typeof saveProgress==='function'},
     {name:'coerce.builderV2',ok:(function(){try{const demo={schema:2,game:{gameId:'lotr',mechanicId:'quest'},lang:{ui:'cs',content:'en',support:'cs'},theme:{variant:'safe'},stations:[{name:'S1',exercise:{type:'mc4',qs:[{t:'Q',opts:['a','b'],a:0,exp:''}]}},{name:'S2',exercise:{type:'yesno',qs:[{t:'T',a:0,exp:''}] }},{name:'Boss',exercise:{type:'wordbank',qs:[{t:'___',bank:['x','y'],a:'x',exp:''}]}}]}; const c=coerceBuilderV2(demo); validateLudusContent(c); return c.stations.length===3;}catch(e){return false;}})()},
     {name:'offline',ok:!/AIza[0-9A-Za-z_\-]{20,}/.test(document.documentElement.outerHTML)}
   ];
@@ -841,12 +843,25 @@ try{
 
 /* ════════ GAME STATE ════════ */
 let G={name:'',race:'',done:Array(LOCATIONS.length).fill(false),finished:false,teacher:false};
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){}}
+const LUDUS_PROGRESS_API_VERSION='ludus-progress-api-v1';
+function progressPayload(){return Object.assign({v:1,apiVersion:LUDUS_PROGRESS_API_VERSION,engineId:LUDUS_GAME_MANIFEST.engineId,gameId:LUDUS_GAME_MANIFEST.gameId,mechanicId:LUDUS_GAME_MANIFEST.mechanicId,ts:Date.now()},G);}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(progressPayload()));}catch(e){}}
 function normalizeProgress(){
   if(!Array.isArray(G.done))G.done=[];
   G.done=Array.from({length:LOCATIONS.length},(_,i)=>!!G.done[i]);
 }
-function loadSave(){try{const d=localStorage.getItem(SAVE_KEY);if(d){G=Object.assign(G,JSON.parse(d));normalizeProgress();return true;}}catch(e){}return false;}
+function readProgressData(){try{const d=localStorage.getItem(SAVE_KEY);return d?JSON.parse(d):null;}catch(e){return null;}}
+function applyProgressData(d){if(!d)return false;const src=d.state||d;G=Object.assign({name:'',race:'',done:Array(LOCATIONS.length).fill(false),finished:false,teacher:false},src);normalizeProgress();return !!G.name;}
+function loadSave(){return applyProgressData(readProgressData());}
+function doneCountFrom(d){const arr=(d&&Array.isArray(d.done))?d.done:[];return arr.filter(Boolean).length;}
+function getProgressSummary(d){d=d||readProgressData();if(!d)return {apiVersion:LUDUS_PROGRESS_API_VERSION,engineId:LUDUS_GAME_MANIFEST.engineId,storeKey:SAVE_KEY,exists:false};const src=d.state||d;return {apiVersion:LUDUS_PROGRESS_API_VERSION,engineId:LUDUS_GAME_MANIFEST.engineId,gameId:LUDUS_GAME_MANIFEST.gameId,storeKey:SAVE_KEY,exists:!!src.name,name:src.name||'',stage:src.finished?'finished':(src.race?'map':'race'),done:doneCountFrom(src),total:LOCATIONS.length,finished:!!src.finished,updatedAt:d.ts||null};}
+function hasProgress(){const d=readProgressData();return !!(d&&((d.state&&d.state.name)||d.name));}
+function saveProgress(){save();return getProgressSummary();}
+function loadProgress(){return readProgressData();}
+function resumeProgress(data){data=data||readProgressData();if(!applyProgressData(data))return false;const ni=document.getElementById('name-in');if(ni)ni.value=G.name;if(G.race)document.body.setAttribute('data-race',G.race);applyTeacherUI();goMap();return getProgressSummary(data);}
+function clearProgress(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}return true;}
+function installLudusProgressApi(){const api={version:LUDUS_PROGRESS_API_VERSION,storage:'localStorage',key:SAVE_KEY,saveProgress:saveProgress,loadProgress:loadProgress,resumeProgress:resumeProgress,clearProgress:clearProgress,getProgressSummary:getProgressSummary,hasProgress:hasProgress};window.LUDUS_PROGRESS=api;window.LUDUS_ENGINE_API=Object.assign({},window.LUDUS_ENGINE_API||{}, {progress:api,saveProgress:saveProgress,loadProgress:loadProgress,resumeProgress:resumeProgress,clearProgress:clearProgress,getProgressSummary:getProgressSummary});}
+installLudusProgressApi();
 function applyTeacherUI(){
   const on=!!G.teacher;
   document.getElementById('t-banner').style.display=on?'block':'none';
@@ -854,7 +869,7 @@ function applyTeacherUI(){
 }
 function resetGame(){
   if(!confirm(t('newConfirm')))return;
-  try{localStorage.removeItem(SAVE_KEY);}catch(e){}
+  clearProgress();
   G={name:'',race:'',done:Array(LOCATIONS.length).fill(false),finished:false,teacher:false};
   document.body.removeAttribute('data-race');
   document.getElementById('name-in').value='';
